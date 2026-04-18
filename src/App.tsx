@@ -14,6 +14,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminGateway from "./pages/AdminGateway";
 import PartnerPanel from "./pages/PartnerPanel";
 import Pricing from "./pages/Pricing";
+import OrderSuccess from "./pages/OrderSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/admin-gateway" element={<AdminGateway />} />
             <Route path="/partner-panel" element={<PartnerPanel />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/success" element={<OrderSuccess />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin"

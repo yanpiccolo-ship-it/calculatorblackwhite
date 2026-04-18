@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAllAppContent, useUpdateContent, useCreateContent, useDeleteContent, AppContent } from '@/hooks/useAppContent';
 import { useAppSettings, useUpdateSetting, AppSetting, getSettingValue } from '@/hooks/useAppSettings';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LogOut, Save, Plus, Trash2, Search, Settings, Languages, Hash, MessageSquare, Sparkles, DollarSign, Mail, Link, Key } from 'lucide-react';
+import { Loader2, LogOut, Save, Plus, Trash2, Search, Settings, Languages, Hash, MessageSquare, Sparkles, DollarSign, Mail, Link, Key, FileText, RefreshCw, Eye, Download, Send } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LicensesPanel } from '@/components/LicensesPanel';
@@ -195,6 +196,282 @@ const SettingsPanel = ({ settings, updateSetting }: { settings: AppSetting[] | u
           {brandingSettings.map(renderSettingRow)}
         </CardContent>
       </Card>
+    </div>
+  );
+};
+
+type OrderRow = {
+  id: string;
+  user_email: string;
+  user_name: string;
+  birth_date: string;
+  report_type: 'complete' | 'master_premium';
+  status: 'pending' | 'processing' | 'completed' | 'sent';
+  destiny_number: number | null;
+  soul_number: number | null;
+  personality_number: number | null;
+  personal_year_number: number | null;
+  generated_report: string | null;
+  amount_paid: number | null;
+  currency: string | null;
+  created_at: string;
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  processing: 'bg-blue-100 text-blue-800',
+  completed: 'bg-green-100 text-green-800',
+  sent: 'bg-gray-100 text-gray-600',
+};
+
+const OrdersPanel = () => {
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [viewReport, setViewReport] = useState<OrderRow | null>(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setOrders(data as OrderRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchOrders(); }, []);
+
+  const handleGenerate = async (order: OrderRow) => {
+    setGeneratingId(order.id);
+    try {
+      const { error } = await supabase.functions.invoke('generate-report', {
+        body: { orderId: order.id },
+      });
+      if (error) throw new Error(error.message);
+      toast({ title: '¡Informe generado correctamente!' });
+      fetchOrders();
+    } catch (err: unknown) {
+      toast({ title: 'Error al generar el informe', description: err instanceof Error ? err.message : 'Intenta de nuevo', variant: 'destructive' });
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
+  const handleMarkSent = async (orderId: string) => {
+    await supabase.from('orders').update({ status: 'sent' }).eq('id', orderId);
+    toast({ title: 'Estado actualizado a "Enviado"' });
+    fetchOrders();
+  };
+
+  const handleDownloadReport = (order: OrderRow) => {
+    if (!order.generated_report) return;
+    const blob = new Blob([order.generated_report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `informe_${order.user_name.replace(/\s+/g, '_')}_${order.report_type}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Nombre', 'Email', 'Tipo', 'Estado', 'Destino#', 'Alma#', 'Personalidad#', 'AñoPersonal#', 'Importe', 'Fecha'];
+    const rows = filteredOrders.map(o => [
+      o.user_name, o.user_email, o.report_type, o.status,
+      o.destiny_number ?? '', o.soul_number ?? '', o.personality_number ?? '', o.personal_year_number ?? '',
+      o.amount_paid ? `${o.amount_paid} ${o.currency}` : '',
+      new Date(o.created_at).toLocaleDateString('es-ES'),
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pedidos_informes.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredOrders = orders.filter(o => {
+    const matchStatus = filterStatus === 'all' || o.status === filterStatus;
+    const matchType = filterType === 'all' || o.report_type === filterType;
+    return matchStatus && matchType;
+  });
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-36 h-8 text-xs">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="pending">Pendiente</SelectItem>
+              <SelectItem value="processing">Procesando</SelectItem>
+              <SelectItem value="completed">Completado</SelectItem>
+              <SelectItem value="sent">Enviado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-40 h-8 text-xs">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los tipos</SelectItem>
+              <SelectItem value="complete">Complete Report</SelectItem>
+              <SelectItem value="master_premium">Master Premium</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={fetchOrders} className="h-8 text-xs">
+            <RefreshCw className="w-3 h-3 mr-1" /> Actualizar
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleExportCSV} className="h-8 text-xs">
+            <Download className="w-3 h-3 mr-1" /> Exportar CSV
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex gap-4 text-sm">
+        <span className="text-muted-foreground">Total: <strong>{filteredOrders.length}</strong></span>
+        <span className="text-yellow-700">Pendientes: <strong>{orders.filter(o => o.status === 'pending').length}</strong></span>
+        <span className="text-green-700">Completados: <strong>{orders.filter(o => o.status === 'completed').length}</strong></span>
+        <span className="text-gray-500">Enviados: <strong>{orders.filter(o => o.status === 'sent').length}</strong></span>
+      </div>
+
+      {filteredOrders.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p>No hay pedidos registrados aún.</p>
+          <p className="text-xs mt-1">Los pedidos aparecerán aquí una vez que los clientes realicen pagos.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto border rounded-lg">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="text-left px-3 py-2 font-medium text-gray-600">Cliente</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-600">Tipo</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-600">Números</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-600">Estado</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-600">Importe</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-600">Fecha</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-600">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredOrders.map(order => (
+                <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="px-3 py-3">
+                    <p className="font-medium text-gray-800">{order.user_name}</p>
+                    <p className="text-gray-400">{order.user_email}</p>
+                    <p className="text-gray-300">{order.birth_date}</p>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${order.report_type === 'master_premium' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'}`}>
+                      {order.report_type === 'master_premium' ? 'Master Premium' : 'Complete'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-gray-500">
+                    <div className="space-y-0.5">
+                      {order.destiny_number && <div>Destino: <strong>{order.destiny_number}</strong></div>}
+                      {order.soul_number && <div>Alma: <strong>{order.soul_number}</strong></div>}
+                      {order.personality_number && <div>Pers.: <strong>{order.personality_number}</strong></div>}
+                      {order.personal_year_number && <div>Año: <strong>{order.personal_year_number}</strong></div>}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                      {order.status === 'pending' ? '⏳ Pendiente' : order.status === 'processing' ? '⚙️ Procesando' : order.status === 'completed' ? '✅ Completado' : '📤 Enviado'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-gray-600 font-medium">
+                    {order.amount_paid ? `€${order.amount_paid}` : '-'}
+                  </td>
+                  <td className="px-3 py-3 text-gray-400">
+                    {new Date(order.created_at).toLocaleDateString('es-ES')}
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {(order.status === 'pending' || order.status === 'processing') && (
+                        <Button
+                          size="sm"
+                          className="h-7 text-[10px] bg-black hover:bg-gray-900 text-white px-2"
+                          disabled={generatingId === order.id}
+                          onClick={() => handleGenerate(order)}
+                        >
+                          {generatingId === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : '✨ Generar'}
+                        </Button>
+                      )}
+                      {order.generated_report && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px] px-2"
+                            onClick={() => setViewReport(order)}
+                          >
+                            <Eye className="w-3 h-3 mr-1" /> Ver
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px] px-2"
+                            onClick={() => handleDownloadReport(order)}
+                          >
+                            <Download className="w-3 h-3 mr-1" /> TXT
+                          </Button>
+                        </>
+                      )}
+                      {order.status === 'completed' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] px-2 text-green-700 border-green-200"
+                          onClick={() => handleMarkSent(order.id)}
+                        >
+                          <Send className="w-3 h-3 mr-1" /> Enviado
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* View Report Modal */}
+      <Dialog open={!!viewReport} onOpenChange={() => setViewReport(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif">
+              Informe de {viewReport?.user_name} — {viewReport?.report_type === 'master_premium' ? 'Master Premium' : 'Complete Report'}
+            </DialogTitle>
+          </DialogHeader>
+          <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed bg-gray-50 p-4 rounded-lg">
+            {viewReport?.generated_report}
+          </pre>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => viewReport && handleDownloadReport(viewReport)}>
+              <Download className="w-4 h-4 mr-2" /> Descargar TXT
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -391,8 +668,12 @@ const Admin = () => {
 
       {/* Main Tabs: Settings vs Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <Tabs defaultValue="settings">
+        <Tabs defaultValue="orders">
           <TabsList className="mb-6">
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Informes & Pedidos
+            </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configuration
@@ -406,6 +687,24 @@ const Admin = () => {
               Licenses
             </TabsTrigger>
           </TabsList>
+
+          {/* Orders Tab */}
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Gestión de Informes y Pedidos
+                </CardTitle>
+                <CardDescription>
+                  Visualiza, genera y gestiona los informes numerológicos de tus clientes. Requiere OPENAI_API_KEY configurada en Secrets para generación automática.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OrdersPanel />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings">

@@ -55,8 +55,23 @@ Preferred communication style: Simple, everyday language.
 - `user_roles`: Role assignments for admin access
 
 ### Third-Party Integrations
-- **Mailchimp**: Email collection configuration in `src/lib/appConfig.ts` (API key, list ID, server)
-- **External Checkout**: Configurable checkout URL for premium PDF reports
+- **Mailchimp**: Email collection via `supabase/functions/mailchimp-subscribe/` edge function
+- **Stripe**: Payment checkout via `supabase/functions/create-checkout/` edge function
+- **Stripe Webhook**: `supabase/functions/stripe-webhook/` handles payment confirmations
+- **OpenAI (GPT-4o)**: Report generation via `supabase/functions/generate-report/` edge function
+
+### Report Products
+- **Complete Report (€29.99)**: 2500-3500 words, includes archetypes, master numbers, meditation, exercises
+- **Master Premium Report (€59.99)**: 4500-6500 words, full spiritual transformation report
+
+### Payment & Reports Flow
+1. User clicks "Buy" on `/pricing` → fills form (name, email, birth date)
+2. `create-checkout` edge function creates Stripe session + pending order in Supabase
+3. User completes Stripe payment → redirected to `/success`
+4. `stripe-webhook` confirms payment → order remains `pending`
+5. Admin visits `/admin` → "Informes & Pedidos" tab → clicks "Generar"
+6. `generate-report` edge function calls OpenAI GPT-4o → stores report text
+7. Admin downloads TXT → marks as "Sent"
 
 ### Key NPM Packages
 - `@supabase/supabase-js`: Supabase client
