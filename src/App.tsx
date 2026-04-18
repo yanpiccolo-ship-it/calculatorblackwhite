@@ -15,6 +15,7 @@ import AdminGateway from "./pages/AdminGateway";
 import PartnerPanel from "./pages/PartnerPanel";
 import Pricing from "./pages/Pricing";
 import OrderSuccess from "./pages/OrderSuccess";
+import ReportPreview from "./pages/ReportPreview";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/report-preview/:orderId"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <ReportPreview />
                 </ProtectedRoute>
               }
             />

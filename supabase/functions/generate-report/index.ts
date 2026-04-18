@@ -301,6 +301,22 @@ serve(async (req) => {
       .update({ status: 'completed', generated_report: reportText })
       .eq('id', orderId);
 
+    // Try to send email automatically (non-blocking — won't fail the whole request)
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+      await fetch(`${supabaseUrl}/functions/v1/send-report-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({ orderId }),
+      });
+    } catch (emailErr) {
+      console.warn('Auto-email send failed (non-critical):', emailErr);
+    }
+
     return new Response(JSON.stringify({ success: true, reportLength: reportText.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
