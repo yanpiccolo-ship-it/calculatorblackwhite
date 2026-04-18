@@ -61,7 +61,39 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Could not update order' }), { status: 500 });
       }
 
-      console.log(`Order ${orderId} payment confirmed. Status: pending (awaiting report generation)`);
+      console.log(`Order ${orderId} payment confirmed — launching automated report generation...`);
+
+      // Fire-and-forget: auto-generate report + send email
+      // Run in background so Stripe webhook returns 200 immediately
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+      EdgeRuntime?.waitUntil?.(
+        fetch(`${supabaseUrl}/functions/v1/generate-report`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({ orderId }),
+        }).then(res => {
+          console.log(`Auto-generation triggered for order ${orderId}: ${res.status}`);
+        }).catch(err => {
+          console.error(`Auto-generation failed for order ${orderId}:`, err);
+        })
+      );
+
+      // Fallback if EdgeRuntime is not available: fire without waiting
+      if (!EdgeRuntime?.waitUntil) {
+        fetch(`${supabaseUrl}/functions/v1/generate-report`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({ orderId }),
+        }).catch(err => console.error('Auto-generation fetch error:', err));
+      }
     }
   }
 
@@ -74,3 +106,6 @@ serve(async (req) => {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
+
+// Declare EdgeRuntime to avoid TypeScript errors in Deno
+declare const EdgeRuntime: { waitUntil?: (promise: Promise<unknown>) => void } | undefined;
