@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAllAppContent, useUpdateContent, useCreateContent, useDeleteContent, AppContent } from '@/hooks/useAppContent';
 import { useAppSettings, useUpdateSetting, AppSetting, getSettingValue } from '@/hooks/useAppSettings';
@@ -224,15 +224,30 @@ const STATUS_COLORS: Record<string, string> = {
   sent: 'bg-gray-100 text-gray-600',
 };
 
+type EditableOrderData = {
+  user_name: string;
+  user_email: string;
+  birth_date: string;
+  destiny_number: string;
+  soul_number: string;
+  personality_number: string;
+  personal_year_number: string;
+  karmic_numbers: string;
+  report_type: 'complete' | 'master_premium';
+};
+
 const OrdersPanel = () => {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [viewReport, setViewReport] = useState<OrderRow | null>(null);
+  const [editOrder, setEditOrder] = useState<OrderRow | null>(null);
+  const [editData, setEditData] = useState<EditableOrderData | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('orders')
@@ -240,9 +255,9 @@ const OrdersPanel = () => {
       .order('created_at', { ascending: false });
     if (!error && data) setOrders(data as OrderRow[]);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const handleGenerate = async (order: OrderRow) => {
     setGeneratingId(order.id);
@@ -251,7 +266,7 @@ const OrdersPanel = () => {
         body: { orderId: order.id },
       });
       if (error) throw new Error(error.message);
-      toast({ title: '¡Informe generado correctamente!' });
+      toast({ title: '¡Informe generado y enviado al cliente!' });
       fetchOrders();
     } catch (err: unknown) {
       toast({ title: 'Error al generar el informe', description: err instanceof Error ? err.message : 'Intenta de nuevo', variant: 'destructive' });
@@ -260,21 +275,77 @@ const OrdersPanel = () => {
     }
   };
 
-  const handleMarkSent = async (orderId: string) => {
-    await supabase.from('orders').update({ status: 'sent' }).eq('id', orderId);
-    toast({ title: 'Estado actualizado a "Enviado"' });
-    fetchOrders();
+  const handleOpenEditModal = (order: OrderRow) => {
+    setEditOrder(order);
+    setEditData({
+      user_name: order.user_name,
+      user_email: order.user_email,
+      birth_date: order.birth_date,
+      destiny_number: String(order.destiny_number ?? ''),
+      soul_number: String(order.soul_number ?? ''),
+      personality_number: String(order.personality_number ?? ''),
+      personal_year_number: String(order.personal_year_number ?? ''),
+      karmic_numbers: '',
+      report_type: order.report_type,
+    });
   };
 
-  const handleDownloadReport = (order: OrderRow) => {
-    if (!order.generated_report) return;
-    const blob = new Blob([order.generated_report], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `informe_${order.user_name.replace(/\s+/g, '_')}_${order.report_type}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleEditAndGenerate = async () => {
+    if (!editOrder || !editData) return;
+    setGeneratingId(editOrder.id);
+    try {
+      // First update the order with the edited data
+      await supabase.from('orders').update({
+        user_name: editData.user_name,
+        user_email: editData.user_email,
+        birth_date: editData.birth_date,
+        destiny_number: parseInt(editData.destiny_number) || null,
+        soul_number: parseInt(editData.soul_number) || null,
+        personality_number: parseInt(editData.personality_number) || null,
+        personal_year_number: parseInt(editData.personal_year_number) || null,
+        report_type: editData.report_type,
+      }).eq('id', editOrder.id);
+
+      // Then generate
+      const { error } = await supabase.functions.invoke('generate-report', {
+        body: { orderId: editOrder.id },
+      });
+      if (error) throw new Error(error.message);
+      toast({ title: '¡Informe generado con los datos editados!' });
+      setEditOrder(null);
+      setEditData(null);
+      fetchOrders();
+    } catch (err: unknown) {
+      toast({ title: 'Error al generar', description: err instanceof Error ? err.message : 'Intenta de nuevo', variant: 'destructive' });
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
+  const handleResendEmail = async (order: OrderRow) => {
+    setResendingId(order.id);
+    try {
+      const { error } = await supabase.functions.invoke('send-report-email', {
+        body: { orderId: order.id },
+      });
+      if (error) throw new Error(error.message);
+      toast({ title: '✉️ Email reenviado al cliente' });
+      fetchOrders();
+    } catch (err: unknown) {
+      toast({ title: 'Error al reenviar email', description: err instanceof Error ? err.message : 'Revisa la config de email', variant: 'destructive' });
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleOpenPDF = (order: OrderRow) => {
+    window.open(`/admin/report-preview/${order.id}`, '_blank');
+  };
+
+  const handleMarkSent = async (orderId: string) => {
+    await supabase.from('orders').update({ status: 'sent' }).eq('id', orderId);
+    toast({ title: 'Marcado como enviado' });
+    fetchOrders();
   };
 
   const handleExportCSV = () => {
@@ -289,9 +360,7 @@ const OrdersPanel = () => {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pedidos_informes.csv';
-    a.click();
+    a.href = url; a.download = 'pedidos_informes.csv'; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -309,12 +378,11 @@ const OrdersPanel = () => {
 
   return (
     <div className="space-y-4">
+      {/* Filters & actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-36 h-8 text-xs">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
+            <SelectTrigger className="w-36 h-8 text-xs"><SelectValue placeholder="Estado" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los estados</SelectItem>
               <SelectItem value="pending">Pendiente</SelectItem>
@@ -324,9 +392,7 @@ const OrdersPanel = () => {
             </SelectContent>
           </Select>
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-40 h-8 text-xs">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
+            <SelectTrigger className="w-40 h-8 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
               <SelectItem value="complete">Complete Report</SelectItem>
@@ -344,9 +410,11 @@ const OrdersPanel = () => {
         </div>
       </div>
 
-      <div className="flex gap-4 text-sm">
+      {/* Summary counters */}
+      <div className="flex gap-4 text-sm flex-wrap">
         <span className="text-muted-foreground">Total: <strong>{filteredOrders.length}</strong></span>
         <span className="text-yellow-700">Pendientes: <strong>{orders.filter(o => o.status === 'pending').length}</strong></span>
+        <span className="text-blue-700">Procesando: <strong>{orders.filter(o => o.status === 'processing').length}</strong></span>
         <span className="text-green-700">Completados: <strong>{orders.filter(o => o.status === 'completed').length}</strong></span>
         <span className="text-gray-500">Enviados: <strong>{orders.filter(o => o.status === 'sent').length}</strong></span>
       </div>
@@ -355,7 +423,7 @@ const OrdersPanel = () => {
         <div className="text-center py-16 text-muted-foreground">
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p>No hay pedidos registrados aún.</p>
-          <p className="text-xs mt-1">Los pedidos aparecerán aquí una vez que los clientes realicen pagos.</p>
+          <p className="text-xs mt-1">Los pedidos aparecerán aquí una vez que los clientes realicen pagos con Stripe.</p>
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg">
@@ -368,28 +436,28 @@ const OrdersPanel = () => {
                 <th className="text-left px-3 py-2 font-medium text-gray-600">Estado</th>
                 <th className="text-left px-3 py-2 font-medium text-gray-600">Importe</th>
                 <th className="text-left px-3 py-2 font-medium text-gray-600">Fecha</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-600">Acciones</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-600 min-w-[220px]">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.map(order => (
-                <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
+                <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50/50">
                   <td className="px-3 py-3">
                     <p className="font-medium text-gray-800">{order.user_name}</p>
                     <p className="text-gray-400">{order.user_email}</p>
-                    <p className="text-gray-300">{order.birth_date}</p>
+                    <p className="text-gray-300 text-[10px]">{order.birth_date}</p>
                   </td>
                   <td className="px-3 py-3">
                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${order.report_type === 'master_premium' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'}`}>
-                      {order.report_type === 'master_premium' ? 'Master Premium' : 'Complete'}
+                      {order.report_type === 'master_premium' ? '⭐ Master Premium' : 'Complete'}
                     </span>
                   </td>
                   <td className="px-3 py-3 text-gray-500">
                     <div className="space-y-0.5">
-                      {order.destiny_number && <div>Destino: <strong>{order.destiny_number}</strong></div>}
-                      {order.soul_number && <div>Alma: <strong>{order.soul_number}</strong></div>}
-                      {order.personality_number && <div>Pers.: <strong>{order.personality_number}</strong></div>}
-                      {order.personal_year_number && <div>Año: <strong>{order.personal_year_number}</strong></div>}
+                      {order.destiny_number != null && <div>Destino: <strong>{order.destiny_number}</strong></div>}
+                      {order.soul_number != null && <div>Alma: <strong>{order.soul_number}</strong></div>}
+                      {order.personality_number != null && <div>Pers.: <strong>{order.personality_number}</strong></div>}
+                      {order.personal_year_number != null && <div>Año: <strong>{order.personal_year_number}</strong></div>}
                     </div>
                   </td>
                   <td className="px-3 py-3">
@@ -400,49 +468,86 @@ const OrdersPanel = () => {
                   <td className="px-3 py-3 text-gray-600 font-medium">
                     {order.amount_paid ? `€${order.amount_paid}` : '-'}
                   </td>
-                  <td className="px-3 py-3 text-gray-400">
+                  <td className="px-3 py-3 text-gray-400 text-[10px]">
                     {new Date(order.created_at).toLocaleDateString('es-ES')}
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex flex-wrap gap-1">
+                      {/* AUTO GENERATE */}
                       {(order.status === 'pending' || order.status === 'processing') && (
                         <Button
                           size="sm"
                           className="h-7 text-[10px] bg-black hover:bg-gray-900 text-white px-2"
                           disabled={generatingId === order.id}
                           onClick={() => handleGenerate(order)}
+                          title="Generar informe automáticamente con IA"
                         >
                           {generatingId === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : '✨ Generar'}
                         </Button>
                       )}
+
+                      {/* EDIT & GENERATE MANUAL */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[10px] px-2"
+                        onClick={() => handleOpenEditModal(order)}
+                        title="Editar datos y generar manualmente"
+                        disabled={generatingId === order.id}
+                      >
+                        ✏️ Editar
+                      </Button>
+
+                      {/* PDF VIEW */}
                       {order.generated_report && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-[10px] px-2"
-                            onClick={() => setViewReport(order)}
-                          >
-                            <Eye className="w-3 h-3 mr-1" /> Ver
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-[10px] px-2"
-                            onClick={() => handleDownloadReport(order)}
-                          >
-                            <Download className="w-3 h-3 mr-1" /> TXT
-                          </Button>
-                        </>
-                      )}
-                      {order.status === 'completed' && (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-[10px] px-2 text-green-700 border-green-200"
-                          onClick={() => handleMarkSent(order.id)}
+                          className="h-7 text-[10px] px-2 text-blue-700 border-blue-200 hover:bg-blue-50"
+                          onClick={() => handleOpenPDF(order)}
+                          title="Ver y descargar como PDF"
                         >
-                          <Send className="w-3 h-3 mr-1" /> Enviado
+                          🖨️ PDF
+                        </Button>
+                      )}
+
+                      {/* TEXT PREVIEW */}
+                      {order.generated_report && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] px-2"
+                          onClick={() => setViewReport(order)}
+                          title="Ver texto del informe"
+                        >
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                      )}
+
+                      {/* RESEND EMAIL */}
+                      {order.generated_report && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] px-2 text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+                          disabled={resendingId === order.id}
+                          onClick={() => handleResendEmail(order)}
+                          title="Reenviar informe por email"
+                        >
+                          {resendingId === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Send className="w-3 h-3 mr-1" /> Email</>}
+                        </Button>
+                      )}
+
+                      {/* MARK AS SENT */}
+                      {order.status === 'completed' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-[10px] px-2 text-green-700"
+                          onClick={() => handleMarkSent(order.id)}
+                          title="Marcar como enviado manualmente"
+                        >
+                          ✓ Sent
                         </Button>
                       )}
                     </div>
@@ -454,20 +559,97 @@ const OrdersPanel = () => {
         </div>
       )}
 
-      {/* View Report Modal */}
+      {/* VIEW REPORT TEXT MODAL */}
       <Dialog open={!!viewReport} onOpenChange={() => setViewReport(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif">
-              Informe de {viewReport?.user_name} — {viewReport?.report_type === 'master_premium' ? 'Master Premium' : 'Complete Report'}
+            <DialogTitle className="font-serif text-lg">
+              {viewReport?.user_name} — {viewReport?.report_type === 'master_premium' ? 'Master Premium' : 'Complete Report'}
             </DialogTitle>
           </DialogHeader>
           <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed bg-gray-50 p-4 rounded-lg">
             {viewReport?.generated_report}
           </pre>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => viewReport && handleOpenPDF(viewReport)}>
+              🖨️ Abrir PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT & GENERATE MANUAL MODAL */}
+      <Dialog open={!!editOrder} onOpenChange={() => { setEditOrder(null); setEditData(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar datos y generar informe</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Puedes corregir cualquier dato antes de generar el informe con IA.
+            </p>
+          </DialogHeader>
+          {editData && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Nombre completo</Label>
+                  <Input className="h-8 text-sm" value={editData.user_name} onChange={e => setEditData(d => d ? { ...d, user_name: e.target.value } : d)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Email</Label>
+                  <Input className="h-8 text-sm" type="email" value={editData.user_email} onChange={e => setEditData(d => d ? { ...d, user_email: e.target.value } : d)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Fecha de nacimiento</Label>
+                  <Input className="h-8 text-sm" value={editData.birth_date} onChange={e => setEditData(d => d ? { ...d, birth_date: e.target.value } : d)} placeholder="YYYY-MM-DD" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Tipo de informe</Label>
+                  <Select value={editData.report_type} onValueChange={v => setEditData(d => d ? { ...d, report_type: v as 'complete' | 'master_premium' } : d)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="complete">Complete Report</SelectItem>
+                      <SelectItem value="master_premium">Master Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="border-t pt-3">
+                <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Números Numerológicos</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Número de Vida (Destino)</Label>
+                    <Input className="h-8 text-sm" value={editData.destiny_number} onChange={e => setEditData(d => d ? { ...d, destiny_number: e.target.value } : d)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Número del Alma</Label>
+                    <Input className="h-8 text-sm" value={editData.soul_number} onChange={e => setEditData(d => d ? { ...d, soul_number: e.target.value } : d)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Número de Personalidad</Label>
+                    <Input className="h-8 text-sm" value={editData.personality_number} onChange={e => setEditData(d => d ? { ...d, personality_number: e.target.value } : d)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Año Personal</Label>
+                    <Input className="h-8 text-sm" value={editData.personal_year_number} onChange={e => setEditData(d => d ? { ...d, personal_year_number: e.target.value } : d)} />
+                  </div>
+                </div>
+                <div className="space-y-1 mt-3">
+                  <Label className="text-xs">Números Kármicos (ej: 13, 16)</Label>
+                  <Input className="h-8 text-sm" value={editData.karmic_numbers} onChange={e => setEditData(d => d ? { ...d, karmic_numbers: e.target.value } : d)} placeholder="Opcional" />
+                </div>
+              </div>
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => viewReport && handleDownloadReport(viewReport)}>
-              <Download className="w-4 h-4 mr-2" /> Descargar TXT
+            <Button variant="outline" onClick={() => { setEditOrder(null); setEditData(null); }}>Cancelar</Button>
+            <Button
+              className="bg-black hover:bg-gray-900 text-white"
+              disabled={generatingId === editOrder?.id}
+              onClick={handleEditAndGenerate}
+            >
+              {generatingId === editOrder?.id ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generando...</> : '✨ Generar Informe'}
             </Button>
           </DialogFooter>
         </DialogContent>
