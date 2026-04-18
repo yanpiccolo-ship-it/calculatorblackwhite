@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          id: string
+          user_email: string
+          user_name: string
+          birth_date: string
+          report_type: 'complete' | 'master_premium'
+          stripe_session_id: string | null
+          stripe_payment_intent: string | null
+          status: 'pending' | 'processing' | 'completed' | 'sent'
+          destiny_number: number | null
+          soul_number: number | null
+          personality_number: number | null
+          personal_year_number: number | null
+          expression_number: number | null
+          karmic_numbers: string | null
+          generated_report: string | null
+          amount_paid: number | null
+          currency: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_email: string
+          user_name: string
+          birth_date: string
+          report_type: 'complete' | 'master_premium'
+          stripe_session_id?: string | null
+          stripe_payment_intent?: string | null
+          status?: 'pending' | 'processing' | 'completed' | 'sent'
+          destiny_number?: number | null
+          soul_number?: number | null
+          personality_number?: number | null
+          personal_year_number?: number | null
+          expression_number?: number | null
+          karmic_numbers?: string | null
+          generated_report?: string | null
+          amount_paid?: number | null
+          currency?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_email?: string
+          user_name?: string
+          birth_date?: string
+          report_type?: 'complete' | 'master_premium'
+          stripe_session_id?: string | null
+          stripe_payment_intent?: string | null
+          status?: 'pending' | 'processing' | 'completed' | 'sent'
+          destiny_number?: number | null
+          soul_number?: number | null
+          personality_number?: number | null
+          personal_year_number?: number | null
+          expression_number?: number | null
+          karmic_numbers?: string | null
+          generated_report?: string | null
+          amount_paid?: number | null
+          currency?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_content: {
         Row: {
           content_key: string
