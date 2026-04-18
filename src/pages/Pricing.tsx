@@ -154,7 +154,7 @@ const Pricing = () => {
         {/* Delivery note */}
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-12 text-center">
           <p className="text-xs text-gray-500">
-            💡 <strong>Forma de entrega:</strong> Una vez confirmado tu pago vía Stripe, recibirás tu informe personalizado en el email que registres. La entrega se realiza de forma manual, generalmente en minutos.
+            ⚡ <strong>Entrega automática:</strong> Una vez confirmado el pago, tu informe se genera con inteligencia artificial y se envía automáticamente a tu email en minutos.
           </p>
         </div>
 

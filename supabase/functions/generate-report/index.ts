@@ -12,28 +12,24 @@ const ARCHETYPES: Record<number, string> = {
   11: 'El Visionario', 22: 'El Arquitecto del Mundo', 33: 'El Maestro del Amor', 44: 'El Maestro Constructor del Destino',
 };
 
-// Tarot de Marsella — Arcanos Mayores asociados a cada número de vida
-// Según correspondencia tradicional y lectura junguiana
 const TAROT_MARSEILLE: Record<number, { card: string; jungArchetype: string; shadow: string; light: string }> = {
-  1:  { card: 'El Bagatto (El Mago) — Arcano I',      jungArchetype: 'El Héroe / El Yo consciente',       shadow: 'Manipulación, arrogancia, uso del poder sin ética',       light: 'Manifestación creativa, voluntad alineada, maestría de los propios recursos' },
-  2:  { card: 'La Papesse (La Sacerdotisa) — Arcano II', jungArchetype: 'El Ánima / La Sabia Interior',   shadow: 'Secretismo, pasividad excesiva, bloqueo de la intuición',   light: 'Sabiduría intuitiva, conexión con el inconsciente, receptividad sagrada' },
-  3:  { card: "L'Impératrice (La Emperatriz) — Arcano III", jungArchetype: 'La Gran Madre / Ánima fértil', shadow: 'Dependencia afectiva, sobreprotección, caos creativo',        light: 'Creatividad desbordante, amor incondicional, abundancia y expresión del alma' },
-  4:  { card: "L'Empereur (El Emperador) — Arcano IV",  jungArchetype: 'El Padre / El Rey Interior',      shadow: 'Rigidez, control, autoritarismo, miedo al cambio',           light: 'Estructura sagrada, liderazgo con integridad, dominio de la realidad material' },
-  5:  { card: 'Le Pape (El Hierofante) — Arcano V',    jungArchetype: 'El Sabio / El Guía espiritual',   shadow: 'Dogmatismo, conformismo, dependencia de la aprobación externa', light: 'Transmisión de conocimiento sagrado, puente entre lo humano y lo divino' },
-  6:  { card: "L'Amoureux (El Enamorado) — Arcano VI", jungArchetype: 'El Ánima y el Ánimus en integración', shadow: 'Indecisión crónica, dependencia emocional, conflicto de valores', light: 'Elección consciente, integración de polaridades, amor como elección del alma' },
-  7:  { card: 'Le Chariot (El Carro) — Arcano VII',    jungArchetype: 'El Guerrero / La Voluntad triunfante', shadow: 'Control rígido, victoria vacía, falta de integración emocional', light: 'Dominio de fuerzas internas opuestas, avance con propósito, conquista del destino' },
-  8:  { card: 'La Justice (La Justicia) — Arcano VIII', jungArchetype: 'El Árbitro / La Conciencia Moral', shadow: 'Juicio implacable, frialdad, inflexibilidad moral',            light: 'Equilibrio kármico, discernimiento elevado, integridad en todas las decisiones' },
-  9:  { card: "L'Hermite (El Ermitaño) — Arcano IX",   jungArchetype: 'El Viejo Sabio / El Sí-mismo profundo', shadow: 'Aislamiento patológico, soledad como huida, perfeccionismo estéril', light: 'Búsqueda interior luminosa, guía espiritual auténtica, sabiduría ganada en silencio' },
-  11: { card: 'La Force (La Fuerza) — Arcano XI',      jungArchetype: 'El Domador / La Energía Integrada', shadow: 'Represión de la sombra, lucha constante con los instintos',   light: 'Integración del instinto y el espíritu, fuerza desde la compasión, coraje del alma' },
-  22: { card: 'Le Mat (El Loco) — Arcano 0/XXII',      jungArchetype: 'El Trickster / El Espíritu Libre', shadow: 'Irresponsabilidad, huida de la realidad, caos sin propósito',  light: 'Libertad absoluta, confianza en el universo, potencial ilimitado del Arquitecto del Mundo' },
+  1:  { card: 'El Bagatto (El Mago) — Arcano I',         jungArchetype: 'El Héroe / El Yo consciente',              shadow: 'Manipulación, arrogancia, uso del poder sin ética',        light: 'Manifestación creativa, voluntad alineada, maestría de los propios recursos' },
+  2:  { card: 'La Papesse (La Sacerdotisa) — Arcano II',  jungArchetype: 'El Ánima / La Sabia Interior',             shadow: 'Secretismo, pasividad excesiva, bloqueo de la intuición',  light: 'Sabiduría intuitiva, conexión con el inconsciente, receptividad sagrada' },
+  3:  { card: "L'Impératrice (La Emperatriz) — Arcano III", jungArchetype: 'La Gran Madre / Ánima fértil',           shadow: 'Dependencia afectiva, sobreprotección, caos creativo',     light: 'Creatividad desbordante, amor incondicional, abundancia y expresión del alma' },
+  4:  { card: "L'Empereur (El Emperador) — Arcano IV",    jungArchetype: 'El Padre / El Rey Interior',              shadow: 'Rigidez, control, autoritarismo, miedo al cambio',          light: 'Estructura sagrada, liderazgo con integridad, dominio de la realidad material' },
+  5:  { card: 'Le Pape (El Hierofante) — Arcano V',       jungArchetype: 'El Sabio / El Guía espiritual',           shadow: 'Dogmatismo, conformismo, dependencia de la aprobación externa', light: 'Transmisión de conocimiento sagrado, puente entre lo humano y lo divino' },
+  6:  { card: "L'Amoureux (El Enamorado) — Arcano VI",    jungArchetype: 'El Ánima y el Ánimus en integración',     shadow: 'Indecisión crónica, dependencia emocional, conflicto de valores', light: 'Elección consciente, integración de polaridades, amor como elección del alma' },
+  7:  { card: 'Le Chariot (El Carro) — Arcano VII',       jungArchetype: 'El Guerrero / La Voluntad triunfante',    shadow: 'Control rígido, victoria vacía, falta de integración emocional', light: 'Dominio de fuerzas internas opuestas, avance con propósito, conquista del destino' },
+  8:  { card: 'La Justice (La Justicia) — Arcano VIII',   jungArchetype: 'El Árbitro / La Conciencia Moral',        shadow: 'Juicio implacable, frialdad, inflexibilidad moral',         light: 'Equilibrio kármico, discernimiento elevado, integridad en todas las decisiones' },
+  9:  { card: "L'Hermite (El Ermitaño) — Arcano IX",      jungArchetype: 'El Viejo Sabio / El Sí-mismo profundo',   shadow: 'Aislamiento patológico, soledad como huida, perfeccionismo estéril', light: 'Búsqueda interior luminosa, guía espiritual auténtica, sabiduría ganada en silencio' },
+  11: { card: 'La Force (La Fuerza) — Arcano XI',         jungArchetype: 'El Domador / La Energía Integrada',       shadow: 'Represión de la sombra, lucha constante con los instintos', light: 'Integración del instinto y el espíritu, fuerza desde la compasión, coraje del alma' },
+  22: { card: 'Le Mat (El Loco) — Arcano 0/XXII',         jungArchetype: 'El Trickster / El Espíritu Libre',        shadow: 'Irresponsabilidad, huida de la realidad, caos sin propósito', light: 'Libertad absoluta, confianza en el universo, potencial ilimitado del Arquitecto del Mundo' },
   33: { card: 'Les Amoureux — Arcano VI (vibración superior)', jungArchetype: 'El Maestro del Amor / La Integración Total', shadow: 'Sacrificio excesivo, martirio emocional, amor desde la herida', light: 'Amor incondicional como misión de vida, sanación colectiva a través de la presencia' },
-  44: { card: 'L\'Empereur — Arcano IV (vibración superior)', jungArchetype: 'El Gran Constructor / El Hacedor de Realidades', shadow: 'Perfeccionismo paralizante, acumulación de poder, inflexibilidad extrema', light: 'Construcción de legados que trascienden lo personal, arquitectura del mundo desde la sabiduría' },
+  44: { card: "L'Empereur — Arcano IV (vibración superior)", jungArchetype: 'El Gran Constructor / El Hacedor de Realidades', shadow: 'Perfeccionismo paralizante, acumulación de poder, inflexibilidad extrema', light: 'Construcción de legados que trascienden lo personal, arquitectura del mundo desde la sabiduría' },
 };
 
-// Para números que no están en la tabla, calculamos el Arcano por reducción
 function getTarotForNumber(n: number): { card: string; jungArchetype: string; shadow: string; light: string } {
   if (TAROT_MARSEILLE[n]) return TAROT_MARSEILLE[n];
-  // Reducir a 1-9
   const reduced = n % 9 || 9;
   return TAROT_MARSEILLE[reduced] || TAROT_MARSEILLE[1];
 }
@@ -144,72 +140,116 @@ Número personal del año: ${personalYearNumber}
 Arquetipo central: ${archetype}
 
 CARTA TAROT DE MARSELLA DEL NÚMERO DE VIDA:
-Carta: ${tarot.card}
-Arquetipo Junguiano: ${tarot.jungArchetype}
-Sombra: ${tarot.shadow}
-Luz: ${tarot.light}
+Carta: ${tarot.card} | Arquetipo: ${tarot.jungArchetype} | Sombra: ${tarot.shadow} | Luz: ${tarot.light}
 
 CARTA TAROT DE MARSELLA DEL NÚMERO DEL ALMA:
-Carta: ${tarotSoul.card}
-Arquetipo: ${tarotSoul.jungArchetype}
+Carta: ${tarotSoul.card} | Arquetipo: ${tarotSoul.jungArchetype}
 
 El informe debe incluir TODAS estas secciones con máxima profundidad:
 
 1. INTRODUCCIÓN AL VIAJE DEL ALMA
-Cómo la numerología y el Tarot de Marsella revelan propósito, evolución y destino desde la psicología junguiana. Apertura transformadora.
-
-2. PROPÓSITO DEL ALMA
-Interpretación profunda del número de vida ${destinyNumber}. Misión espiritual, impacto en el mundo, evolución del alma.
-${isMaster ? `Como número maestro ${destinyNumber} — ${archetype} — explica su rol espiritual extraordinario en la humanidad y el potencial transformador que conlleva.` : ''}
-
+2. PROPÓSITO DEL ALMA — Número ${destinyNumber}${isMaster ? ` (NÚMERO MAESTRO — ${archetype})` : ''}
 3. ARQUETIPO MAESTRO — ${archetype}
-Explicación profunda del arquetipo central. Sus sombras, su luz, su misión. Cómo este arquetipo opera en la psique de ${userName}.
-
-4. TAROT DE MARSELLA — CARTA DE VIDA: ${tarot.card}
-Análisis completo e iconográfico de esta carta en el Tarot de Marsella tradicional (colores, símbolos, postura, elementos).
-Lectura junguiana profunda: cómo esta carta encarna el arquetipo de ${tarot.jungArchetype} en la vida de ${userName}.
-LA SOMBRA JUNGUIANA: análisis detallado de ${tarot.shadow} — cómo se manifiesta en patrones inconscientes, relaciones y decisiones.
-EL PROCESO DE INDIVIDUACIÓN: cómo integrar la sombra para llegar a la luz de ${tarot.light}.
-Ejercicio práctico de trabajo con esta carta (contemplación activa, técnica junguiana).
-
-5. TAROT DEL ALMA — CARTA DEL NÚMERO ${soulNumber}: ${tarotSoul.card}
-Lectura del deseo más profundo del alma a través de esta carta. Cómo se complementa con la carta de vida.
-El diálogo entre ${tarot.card} y ${tarotSoul.card}: tensión creativa y potencial de integración.
-
+4. TAROT DE MARSELLA — CARTA DE VIDA: ${tarot.card} (iconografía, lectura junguiana, sombra, proceso de individuación, ejercicio práctico)
+5. TAROT DEL ALMA — CARTA ${soulNumber}: ${tarotSoul.card} (deseo del alma, diálogo entre ambas cartas)
 6. TALENTOS Y POTENCIAL
-Interpretación avanzada del número de expresión ${expressionNumber || destinyNumber}. Dones únicos y cómo manifestarlos.
-
-7. DESAFÍOS KÁRMICOS
-Interpretación profunda de los patrones repetitivos, lecciones del alma y contratos kármicos. ${karmicNumbers ? `Números: ${karmicNumbers}` : 'Análisis de la ausencia de deuda kármica y su significado.'}
-
-8. CICLOS DE VIDA
-Explicación de los tres grandes ciclos: primer ciclo (formación), segundo ciclo (productividad), tercer ciclo (realización). Qué le corresponde vivir a ${userName} en cada uno.
-
+7. DESAFÍOS KÁRMICOS${karmicNumbers ? ` — Números: ${karmicNumbers}` : ''}
+8. CICLOS DE VIDA (tres grandes ciclos calculados)
 9. RELACIONES Y VÍNCULOS
-Análisis numerológico de amor, familia y asociaciones. Patrones relacionales, compatibilidades y el propósito de los vínculos en su vida. Cómo la energía de ${tarot.card} influye en su modo de relacionarse.
-
 10. VOCACIÓN Y CAMINO PROFESIONAL
-Vocación natural, estilo de liderazgo, misión laboral. Cómo alinear el trabajo con el propósito del alma y el arquetipo de ${archetype}.
-
 11. AÑO PERSONAL PROFUNDO — ${personalYearNumber}
-Análisis estratégico del ciclo actual. Decisiones clave, oportunidades, energías a trabajar y cómo navegar este año con consciencia.
-
-12. PLAN DE EVOLUCIÓN PERSONAL
-Acciones concretas: hábitos específicos, decisiones estratégicas, enfoque espiritual. Plan de 90 días de transformación integrando numerología y Tarot de Marsella.
-
-13. MEDITACIÓN PROFUNDA
-Meditación guiada de 10 minutos para conectar con la esencia del número ${destinyNumber} y la imagen de ${tarot.card}. Detallada, evocadora, transformadora. Usa la técnica de imaginación activa de Jung.
-
+12. PLAN DE EVOLUCIÓN PERSONAL (plan de 90 días)
+13. MEDITACIÓN PROFUNDA (10 minutos, imaginación activa junguiana)
 14. RITUAL NUMEROLÓGICO CON TAROT
-Ritual energético específico combinando el número de vida ${destinyNumber} con la energía de ${tarot.card}. Paso a paso. Cómo usar la carta del Tarot de Marsella como espejo del alma.
-
 15. MENSAJE DEL ALMA
-Cierre poderoso, transformador, como si el alma misma hablara a través de las palabras y la sabiduría de ${tarot.card}.
 
-ESTILO: sabio, espiritual, profundo, transformador. Integra la perspectiva junguiana de manera natural y accesible, no académica ni fría.
+ESTILO: sabio, espiritual, profundo, transformador. Jung integrado de forma natural, no académica.
 EXTENSIÓN: 4500 a 6500 palabras.
-FORMATO: Usa los títulos de sección indicados. Prosa rica, evocadora, poética en los momentos adecuados. Párrafos bien desarrollados.`;
+FORMATO: títulos de sección claros, prosa rica y evocadora.`;
 }
+
+// ─── AI Generation ────────────────────────────────────────────────────────────
+
+async function generateWithGemini(prompt: string, isPremium: boolean): Promise<string> {
+  const geminiKey = Deno.env.get('GEMINI_API_KEY');
+  if (!geminiKey) throw new Error('GEMINI_API_KEY not configured');
+
+  // Use Gemini 1.5 Flash (free tier) for standard, Pro for premium
+  const model = isPremium ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.85,
+        maxOutputTokens: isPremium ? 8192 : 4096,
+        topP: 0.95,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini API error: ${errText}`);
+  }
+
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Gemini returned empty response');
+  return text;
+}
+
+async function generateWithOpenAI(prompt: string, isPremium: boolean): Promise<string> {
+  const openaiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openaiKey) throw new Error('OPENAI_API_KEY not configured');
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: isPremium ? 8000 : 5000,
+      temperature: 0.8,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenAI error: ${errText}`);
+  }
+
+  const data = await response.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text) throw new Error('OpenAI returned empty response');
+  return text;
+}
+
+async function generateReport(prompt: string, isPremium: boolean): Promise<{ text: string; engine: string }> {
+  // Try Gemini first (free tier)
+  try {
+    const text = await generateWithGemini(prompt, isPremium);
+    return { text, engine: 'gemini' };
+  } catch (geminiErr) {
+    console.warn('Gemini failed, falling back to OpenAI:', geminiErr);
+  }
+
+  // Fallback to OpenAI
+  try {
+    const text = await generateWithOpenAI(prompt, isPremium);
+    return { text, engine: 'openai' };
+  } catch (openaiErr) {
+    throw new Error(`Both AI engines failed. Gemini: check GEMINI_API_KEY. OpenAI: ${openaiErr}`);
+  }
+}
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -246,13 +286,7 @@ serve(async (req) => {
 
     await supabase.from('orders').update({ status: 'processing' }).eq('id', orderId);
 
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiKey) {
-      return new Response(JSON.stringify({ error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your secrets.' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const isPremium = order.report_type === 'master_premium';
 
     const promptData = {
       userName: order.user_name,
@@ -265,59 +299,34 @@ serve(async (req) => {
       karmicNumbers: order.karmic_numbers,
     };
 
-    const prompt = order.report_type === 'master_premium'
+    const prompt = isPremium
       ? buildMasterPremiumPrompt(promptData)
       : buildCompleteReportPrompt(promptData);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: order.report_type === 'master_premium' ? 8000 : 5000,
-        temperature: 0.8,
-      }),
-    });
+    const { text: reportText, engine } = await generateReport(prompt, isPremium);
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('OpenAI error:', errText);
-      await supabase.from('orders').update({ status: 'pending' }).eq('id', orderId);
-      return new Response(JSON.stringify({ error: 'AI generation failed', detail: errText }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const aiData = await response.json();
-    const reportText = aiData.choices?.[0]?.message?.content || '';
+    console.log(`Report generated via ${engine} for order ${orderId} (${reportText.length} chars)`);
 
     await supabase
       .from('orders')
       .update({ status: 'completed', generated_report: reportText })
       .eq('id', orderId);
 
-    // Try to send email automatically (non-blocking — won't fail the whole request)
-    try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-      const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-      await fetch(`${supabaseUrl}/functions/v1/send-report-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
-        },
-        body: JSON.stringify({ orderId }),
-      });
-    } catch (emailErr) {
-      console.warn('Auto-email send failed (non-critical):', emailErr);
-    }
+    // Auto-send email (non-blocking)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-    return new Response(JSON.stringify({ success: true, reportLength: reportText.length }), {
+    fetch(`${supabaseUrl}/functions/v1/send-report-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({ orderId }),
+    }).then(res => console.log(`Auto-email triggered: ${res.status}`))
+      .catch(err => console.warn('Auto-email non-critical error:', err));
+
+    return new Response(JSON.stringify({ success: true, engine, reportLength: reportText.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

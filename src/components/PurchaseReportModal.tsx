@@ -212,13 +212,13 @@ export const PurchaseReportModal = ({
               {step === 'loading' ? (
                 <><Loader2 className="w-4 h-4 animate-spin mr-2" />Redirigiendo...</>
               ) : (
-                'Pagar con Stripe'
+                'Buy'
               )}
             </Button>
           </div>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            💡 Una vez confirmado el pago, recibirás tu informe en el email indicado. Entrega manual en minutos.
+            ⚡ Tu informe se genera y envía automáticamente al email indicado una vez confirmado el pago.
           </p>
         </div>
       </DialogContent>

@@ -55,10 +55,12 @@ Preferred communication style: Simple, everyday language.
 - `user_roles`: Role assignments for admin access
 
 ### Third-Party Integrations
-- **Mailchimp**: Email collection via `supabase/functions/mailchimp-subscribe/` edge function
+- **Mailchimp**: Email collection via `supabase/functions/mailchimp-subscribe/` edge function (CRM only)
 - **Stripe**: Payment checkout via `supabase/functions/create-checkout/` edge function
-- **Stripe Webhook**: `supabase/functions/stripe-webhook/` handles payment confirmations
-- **OpenAI (GPT-4o)**: Report generation via `supabase/functions/generate-report/` edge function
+- **Stripe Webhook**: `supabase/functions/stripe-webhook/` — auto-triggers report generation on payment
+- **Gemini 1.5 Flash/Pro** (primary): Report generation — free tier, `GEMINI_API_KEY` required
+- **OpenAI GPT-4o** (fallback): Report generation fallback if Gemini fails, `OPENAI_API_KEY` required
+- **Resend**: Transactional email delivery via `supabase/functions/send-report-email/`, `RESEND_API_KEY` required (free: 100 emails/day)
 
 ### Report Products
 - **Complete Report (€29.99)**: 2500-3500 words, includes archetypes, master numbers, meditation, exercises

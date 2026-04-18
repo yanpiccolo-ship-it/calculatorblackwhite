@@ -46,62 +46,60 @@ serve(async (req) => {
       });
     }
 
-    const mailchimpKey = Deno.env.get('MAILCHIMP_API_KEY');
-    const mandrillKey = Deno.env.get('MANDRILL_API_KEY') || mailchimpKey;
+    const resendKey = Deno.env.get('RESEND_API_KEY');
 
-    if (!mandrillKey) {
-      console.log('No email API key configured, skipping email send');
-      return new Response(JSON.stringify({ success: false, reason: 'No email API key configured' }), {
+    if (!resendKey) {
+      console.warn('RESEND_API_KEY not configured — skipping email send');
+      return new Response(JSON.stringify({
+        success: false,
+        reason: 'RESEND_API_KEY not configured. Add it to your Supabase edge function secrets.',
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const reportTypeName = order.report_type === 'master_premium'
+    const isPremium = order.report_type === 'master_premium';
+    const reportTypeName = isPremium
       ? 'Master Premium Report — Absolute Revelation'
       : 'Complete Report — Fundamental Guidance';
 
-    // Format report text as HTML
     const reportHtml = formatReportAsHtml(order);
 
-    // Try Mandrill API (Mailchimp transactional)
-    const mandrillResponse = await fetch('https://mandrillapp.com/api/1.0/messages/send.json', {
+    const emailPayload = {
+      from: 'Numerología Dresstyle <informes@dresstyle.com>',
+      to: [order.user_email],
+      subject: `Tu Informe Numerológico — ${reportTypeName}`,
+      html: reportHtml,
+    };
+
+    const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: mandrillKey,
-        message: {
-          html: reportHtml,
-          subject: `Tu Informe Numerológico — ${reportTypeName}`,
-          from_email: 'informes@dresstyle.com',
-          from_name: 'Numerología · Dresstyle',
-          to: [{ email: order.user_email, name: order.user_name, type: 'to' }],
-          headers: { 'Reply-To': 'informes@dresstyle.com' },
-          important: true,
-          track_opens: true,
-          track_clicks: true,
-        },
-      }),
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailPayload),
     });
 
-    if (!mandrillResponse.ok) {
-      const errText = await mandrillResponse.text();
-      console.error('Mandrill error:', errText);
+    if (!resendResponse.ok) {
+      const errText = await resendResponse.text();
+      console.error('Resend error:', errText);
 
-      // Update order to mark email as attempted
-      await supabase.from('orders').update({ status: 'completed' }).eq('id', orderId);
-
-      return new Response(JSON.stringify({ success: false, reason: 'Email service not available. Please send manually.', detail: errText }), {
+      return new Response(JSON.stringify({
+        success: false,
+        reason: 'Email send failed via Resend',
+        detail: errText,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const emailResult = await mandrillResponse.json();
-    console.log('Email sent:', emailResult);
+    const emailResult = await resendResponse.json();
+    console.log('Email sent via Resend:', emailResult.id);
 
-    // Update order status to sent
     await supabase.from('orders').update({ status: 'sent' }).eq('id', orderId);
 
-    return new Response(JSON.stringify({ success: true, emailResult }), {
+    return new Response(JSON.stringify({ success: true, emailId: emailResult.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
@@ -114,18 +112,15 @@ serve(async (req) => {
 });
 
 function formatReportAsHtml(order: Record<string, unknown>): string {
-  const reportType = order.report_type as string;
-  const isPremium = reportType === 'master_premium';
+  const isPremium = order.report_type === 'master_premium';
   const accentColor = isPremium ? '#D4AF37' : '#111111';
   const reportText = (order.generated_report as string) || '';
 
-  // Convert plain text sections to HTML
   const htmlBody = reportText
     .split('\n')
     .map(line => {
       const trimmed = line.trim();
       if (!trimmed) return '<br/>';
-      // Section headers (numbered or all caps)
       if (/^\d+\.\s+[A-ZÁÉÍÓÚÑÜ]/.test(trimmed) || /^[A-ZÁÉÍÓÚÑÜ\s\-—]{10,}$/.test(trimmed)) {
         return `<h2 style="color:${accentColor};font-family:Georgia,serif;font-size:18px;margin:28px 0 10px;border-bottom:1px solid #eee;padding-bottom:6px;">${trimmed}</h2>`;
       }
@@ -139,9 +134,8 @@ function formatReportAsHtml(order: Record<string, unknown>): string {
 <body style="margin:0;padding:0;background:#f9f9f7;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9f7;padding:40px 20px;">
     <tr><td align="center">
-      <table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,0.08);">
+      <table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,0.08);max-width:640px;">
 
-        <!-- Header -->
         <tr><td style="background:${isPremium ? 'linear-gradient(135deg,#1a1a1a,#2d2d2d)' : '#111111'};padding:48px 48px 36px;text-align:center;">
           <p style="color:${accentColor};font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;margin:0 0 12px;">
             ${isPremium ? 'Master Premium Report · Absolute Revelation' : 'Complete Report · Fundamental Guidance'}
@@ -154,7 +148,6 @@ function formatReportAsHtml(order: Record<string, unknown>): string {
           </p>
         </td></tr>
 
-        <!-- Numerology summary bar -->
         <tr><td style="background:${accentColor};padding:20px 48px;">
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
@@ -174,18 +167,16 @@ function formatReportAsHtml(order: Record<string, unknown>): string {
           </table>
         </td></tr>
 
-        <!-- Report body -->
         <tr><td style="padding:48px;">
           ${htmlBody}
         </td></tr>
 
-        <!-- Footer -->
         <tr><td style="background:#f5f5f3;padding:32px 48px;text-align:center;border-top:1px solid #eee;">
           <p style="color:#999;font-family:Arial,sans-serif;font-size:11px;margin:0 0 6px;">
             Este informe ha sido generado personalmente para ${order.user_name}.
           </p>
           <p style="color:#ccc;font-family:Arial,sans-serif;font-size:10px;margin:0;">
-            Design by Just Bee Brand Agency · Dresstyle
+            Dresstyle · Numerología & Arquetipos
           </p>
         </td></tr>
 
