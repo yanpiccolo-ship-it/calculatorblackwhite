@@ -14,6 +14,8 @@ import { Loader2, LogOut, Save, Plus, Trash2, Search, Settings, Languages, Hash,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LicensesPanel } from '@/components/LicensesPanel';
+import MasterReportsPanel from '@/components/admin/MasterReportsPanel';
+import NumerologyToolsPanel from '@/components/admin/NumerologyToolsPanel';
 
 const CONTENT_TYPES = [
   { value: 'ui_label', label: 'UI Labels', icon: Settings },
@@ -851,22 +853,30 @@ const Admin = () => {
       {/* Main Tabs: Settings vs Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Tabs defaultValue="orders">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap h-auto gap-1">
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Informes & Pedidos
+              Pedidos
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Reportes Maestros
+            </TabsTrigger>
+            <TabsTrigger value="tools" className="flex items-center gap-2">
+              <Hash className="w-4 h-4" />
+              Herramientas
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
-              Configuration
+              Configuración
             </TabsTrigger>
             <TabsTrigger value="content" className="flex items-center gap-2">
               <Languages className="w-4 h-4" />
-              Content
+              Contenido
             </TabsTrigger>
             <TabsTrigger value="licenses" className="flex items-center gap-2">
               <Key className="w-4 h-4" />
-              Licenses
+              Licencias
             </TabsTrigger>
           </TabsList>
 
@@ -876,14 +886,50 @@ const Admin = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5" />
-                  Gestión de Informes y Pedidos
+                  Gestión de Pedidos
                 </CardTitle>
                 <CardDescription>
-                  Visualiza, genera y gestiona los informes numerológicos de tus clientes. Requiere OPENAI_API_KEY configurada en Secrets para generación automática.
+                  Genera, revisa y gestiona los informes numerológicos. Los informes se generan automáticamente con Gemini al confirmar el pago vía Stripe.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <OrdersPanel />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Master Reports Tab */}
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  Reportes Maestros
+                </CardTitle>
+                <CardDescription>
+                  Vista visual de todos los informes generados — Tarot de Marsella, arquetipos junguianos, sombra y luz de cada número.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MasterReportsPanel />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Numerology Tools Tab */}
+          <TabsContent value="tools">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Hash className="w-5 h-5" />
+                  Herramientas de Numerología & Tarot Arquetípico
+                </CardTitle>
+                <CardDescription>
+                  Calcula el perfil numerológico completo de cualquier persona — números de vida, tarot de marsella, arquetipos junguianos, sombra/luz y compatibilidades.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NumerologyToolsPanel />
               </CardContent>
             </Card>
           </TabsContent>

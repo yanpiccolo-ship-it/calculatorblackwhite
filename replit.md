@@ -66,14 +66,23 @@ Preferred communication style: Simple, everyday language.
 - **Complete Report (€29.99)**: 2500-3500 words, includes archetypes, master numbers, meditation, exercises
 - **Master Premium Report (€59.99)**: 4500-6500 words, full spiritual transformation report
 
-### Payment & Reports Flow
+### Payment & Reports Flow (Fully Automated)
 1. User clicks "Buy" on `/pricing` → fills form (name, email, birth date)
 2. `create-checkout` edge function creates Stripe session + pending order in Supabase
 3. User completes Stripe payment → redirected to `/success`
-4. `stripe-webhook` confirms payment → order remains `pending`
-5. Admin visits `/admin` → "Informes & Pedidos" tab → clicks "Generar"
-6. `generate-report` edge function calls OpenAI GPT-4o → stores report text
-7. Admin downloads TXT → marks as "Sent"
+4. `stripe-webhook` confirms payment → auto-triggers `generate-report`
+5. `generate-report` uses Gemini (free, fallback OpenAI) → stores report text → auto-calls `send-report-email`
+6. `send-report-email` uses Resend API → delivers styled HTML email → marks order as "sent"
+7. Admin can review via "Reportes Maestros" tab — visual cards with Tarot + Jungian archetypes
+8. Admin can use "Herramientas" tab — live numerology calculator with Tarot de Marseille for any person
+
+### Admin Dashboard Tabs
+- **Pedidos**: Manage all orders (generate, edit, PDF, resend email, mark sent, CSV export)
+- **Reportes Maestros**: Visual report cards with Tarot cards, shadow/light, expandable full report
+- **Herramientas**: Live numerology calculator with Tarot archetypes, personal year timeline, compatibility
+- **Configuración**: Stripe, Mailchimp, pricing settings
+- **Contenido**: CMS for multilingual UI text
+- **Licencias**: Domain-based license management
 
 ### Key NPM Packages
 - `@supabase/supabase-js`: Supabase client
