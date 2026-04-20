@@ -5,19 +5,19 @@ import { Loader2, RefreshCw, Send, Eye, EyeOff, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const TAROT_MARSEILLE: Record<number, { card: string; jungArchetype: string; shadow: string; light: string; roman: string }> = {
-  1:  { roman: 'I',     card: 'El Mago (Le Bagatto)',       jungArchetype: 'El Héroe',           shadow: 'Manipulación, arrogancia',          light: 'Manifestación creativa, voluntad alineada' },
-  2:  { roman: 'II',    card: 'La Sacerdotisa (La Papesse)', jungArchetype: 'La Sabia Interior',  shadow: 'Secretismo, bloqueo intuitivo',     light: 'Sabiduría intuitiva, receptividad sagrada' },
-  3:  { roman: 'III',   card: "La Emperatriz (L'Impératrice)", jungArchetype: 'La Gran Madre',   shadow: 'Dependencia afectiva, sobreprotección', light: 'Creatividad, amor incondicional' },
-  4:  { roman: 'IV',    card: "El Emperador (L'Empereur)",   jungArchetype: 'El Rey Interior',   shadow: 'Rigidez, control, autoritarismo',   light: 'Estructura sagrada, liderazgo íntegro' },
-  5:  { roman: 'V',     card: 'El Hierofante (Le Pape)',     jungArchetype: 'El Guía Espiritual', shadow: 'Dogmatismo, conformismo',           light: 'Transmisión de conocimiento sagrado' },
-  6:  { roman: 'VI',    card: "El Enamorado (L'Amoureux)",   jungArchetype: 'Ánima/Ánimus',      shadow: 'Indecisión, dependencia emocional', light: 'Elección consciente, amor como misión' },
-  7:  { roman: 'VII',   card: 'El Carro (Le Chariot)',       jungArchetype: 'El Guerrero',        shadow: 'Control rígido, victoria vacía',    light: 'Dominio interior, conquista del destino' },
-  8:  { roman: 'VIII',  card: 'La Justicia (La Justice)',    jungArchetype: 'El Árbitro Moral',   shadow: 'Juicio implacable, inflexibilidad', light: 'Equilibrio kármico, discernimiento' },
-  9:  { roman: 'IX',    card: "El Ermitaño (L'Hermite)",     jungArchetype: 'El Viejo Sabio',     shadow: 'Aislamiento, perfeccionismo estéril', light: 'Búsqueda interior, guía auténtica' },
-  11: { roman: 'XI',    card: 'La Fuerza (La Force)',        jungArchetype: 'El Domador',         shadow: 'Represión de la sombra, lucha interna', light: 'Fuerza desde la compasión, coraje' },
-  22: { roman: '0',     card: 'El Loco (Le Mat)',            jungArchetype: 'El Espíritu Libre',  shadow: 'Irresponsabilidad, huida de la realidad', light: 'Libertad absoluta, potencial ilimitado' },
-  33: { roman: 'VI★',   card: 'El Enamorado — vibración superior', jungArchetype: 'Maestro del Amor', shadow: 'Sacrificio excesivo, martirio', light: 'Amor incondicional como misión colectiva' },
-  44: { roman: 'IV★',   card: 'El Emperador — vibración superior', jungArchetype: 'El Gran Constructor', shadow: 'Perfeccionismo paralizante', light: 'Legados que trascienden lo personal' },
+  1:  { roman: 'I',      card: 'I · Le Bateleur (El Mago)',               jungArchetype: 'El Héroe / El Yo Consciente',     shadow: 'Manipulación, arrogancia, poder sin ética',         light: 'Manifestación creativa, voluntad alineada, maestría de recursos' },
+  2:  { roman: 'II',     card: 'II · La Papesse (La Papisa)',              jungArchetype: 'El Ánima / La Sabia Interior',    shadow: 'Secretismo, pasividad excesiva, bloqueo intuitivo', light: 'Sabiduría intuitiva, conexión con el inconsciente' },
+  3:  { roman: 'III',    card: "III · L'Impératrice (La Emperatriz)",      jungArchetype: 'La Gran Madre / Ánima Fértil',    shadow: 'Dependencia afectiva, sobreprotección',             light: 'Creatividad desbordante, amor incondicional, abundancia' },
+  4:  { roman: 'IIII',   card: "IIII · L'Empereur (El Emperador)",         jungArchetype: 'El Padre / El Rey Interior',      shadow: 'Rigidez, control, autoritarismo, miedo al cambio',  light: 'Estructura sagrada, liderazgo con integridad' },
+  5:  { roman: 'V',      card: 'V · Le Pape (El Papa / Hierofante)',       jungArchetype: 'El Sabio / El Guía Espiritual',   shadow: 'Dogmatismo, conformismo, aprobación externa',       light: 'Conocimiento sagrado, puente entre lo humano y divino' },
+  6:  { roman: 'VI',     card: "VI · L'Amoureux (El Enamorado)",           jungArchetype: 'Ánima/Ánimus · Integración',      shadow: 'Indecisión crónica, dependencia emocional',         light: 'Elección consciente, amor como misión del alma' },
+  7:  { roman: 'VII',    card: 'VII · Le Chariot (El Carro)',               jungArchetype: 'El Guerrero / La Voluntad',       shadow: 'Control rígido, victoria vacía',                    light: 'Dominio interior, avance con propósito' },
+  8:  { roman: 'VIII',   card: 'VIII · La Justice (La Justicia)',           jungArchetype: 'El Árbitro / La Conciencia Moral', shadow: 'Juicio implacable, inflexibilidad moral',           light: 'Equilibrio kármico, discernimiento elevado' },
+  9:  { roman: 'VIIII',  card: "VIIII · L'Ermite (El Ermitaño)",            jungArchetype: 'El Viejo Sabio / El Sí-mismo',    shadow: 'Aislamiento patológico, perfeccionismo estéril',    light: 'Búsqueda interior luminosa, guía auténtica' },
+  11: { roman: 'XI',     card: 'XI · La Force (La Fuerza)',                 jungArchetype: 'El Domador / Energía Integrada',  shadow: 'Represión de la sombra, lucha interna',             light: 'Fuerza desde la compasión, coraje espiritual' },
+  22: { roman: '★',      card: 'Le Mat (El Loco) — sin número',             jungArchetype: 'El Trickster / Espíritu Libre',   shadow: 'Irresponsabilidad, huida de la realidad',           light: 'Libertad absoluta, potencial ilimitado' },
+  33: { roman: 'VI★',    card: "VI★ · L'Amoureux — Vibración Superior",     jungArchetype: 'Maestro del Amor / Integración Total', shadow: 'Sacrificio excesivo, martirio emocional',       light: 'Amor incondicional como misión, sanación colectiva' },
+  44: { roman: 'IIII★',  card: "IIII★ · L'Empereur — Maestro Planificador", jungArchetype: 'El Maestro Planificador / Constructor Universal', shadow: 'Carga abrumadora de responsabilidad, desequilibrio entre ambición material y ética espiritual', light: 'Estructuras duraderas que benefician a muchos, manifestación global con sabiduría y eficiencia sagrada' },
 };
 
 const NUMBER_COLORS: Record<number, { bg: string; ring: string; text: string }> = {
