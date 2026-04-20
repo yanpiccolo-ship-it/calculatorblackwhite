@@ -66,7 +66,7 @@ serve(async (req) => {
     const reportHtml = formatReportAsHtml(order);
 
     const emailPayload = {
-      from: 'Numerología Dresstyle <informes@dresstyle.com>',
+      from: 'Numerología Dresstyle <numerology.reading@dresstyle.world>',
       to: [order.user_email],
       subject: `Tu Informe Numerológico — ${reportTypeName}`,
       html: reportHtml,
@@ -176,7 +176,7 @@ function formatReportAsHtml(order: Record<string, unknown>): string {
             Este informe ha sido generado personalmente para ${order.user_name}.
           </p>
           <p style="color:#ccc;font-family:Arial,sans-serif;font-size:10px;margin:0;">
-            Dresstyle · Numerología & Arquetipos
+            Dresstyle · Numerología & Arquetipos · numerology.reading@dresstyle.world
           </p>
         </td></tr>
 
