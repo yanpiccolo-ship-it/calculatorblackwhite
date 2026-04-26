@@ -7,7 +7,7 @@
 insert into public.user_roles (user_id, role)
 select id, 'admin'::public.app_role
 from auth.users
-where email = 'TU_EMAIL@dresstyle.world'
+where email = 'yanpicolo@gmail.com'
 on conflict (user_id, role) do nothing;
 
 -- Verificación: deberías ver tu email con role = admin
