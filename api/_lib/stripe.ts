@@ -2,14 +2,46 @@ import Stripe from 'stripe';
 
 let cachedClient: Stripe | null = null;
 
+// Pick the first env value that looks like a Stripe API key (sk_live_ / sk_test_ / rk_).
+// Avoids the common mistake of pasting a webhook signing secret (whsec_…)
+// into STRIPE_SECRET_KEY.
+function pickStripeApiKey(): string {
+  const candidates = [
+    process.env.STRIPE_SECRET_KEY,
+    process.env.STRIPE_API_KEY,
+    process.env.STRIPE_KEY,
+  ].filter((v): v is string => Boolean(v && v.length > 0));
+
+  const valid = candidates.find((v) => /^(sk|rk)_(live|test)_/.test(v));
+  if (valid) return valid;
+
+  // No properly-prefixed key was found — surface the clearest possible error.
+  const present = candidates
+    .map((v) => `${v.slice(0, 8)}…`)
+    .join(', ');
+  throw new Error(
+    `No valid Stripe API key found (need a value starting with sk_live_, sk_test_ or rk_). ` +
+      `Got: [${present || 'no env vars set'}]. ` +
+      `If you accidentally put the webhook signing secret (whsec_…) in STRIPE_SECRET_KEY, ` +
+      `move it to STRIPE_WEBHOOK_SECRET and put the sk_live_/sk_test_ key in STRIPE_SECRET_KEY (or STRIPE_API_KEY).`,
+  );
+}
+
 export function getStripeClient(): Stripe {
   if (cachedClient) return cachedClient;
-  const secret = process.env.STRIPE_SECRET_KEY;
-  if (!secret) {
-    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
-  }
-  cachedClient = new Stripe(secret, { apiVersion: '2024-06-20' });
+  cachedClient = new Stripe(pickStripeApiKey(), { apiVersion: '2024-06-20' });
   return cachedClient;
+}
+
+// Pick the webhook signing secret from any env value that starts with whsec_.
+// Lets us tolerate users putting it in the wrong slot.
+export function pickStripeWebhookSecret(): string | undefined {
+  const candidates = [
+    process.env.STRIPE_WEBHOOK_SECRET,
+    process.env.STRIPE_SECRET_KEY,
+    process.env.STRIPE_API_KEY,
+  ].filter((v): v is string => Boolean(v && v.length > 0));
+  return candidates.find((v) => v.startsWith('whsec_'));
 }
 
 export type CheckoutSessionRequest = {

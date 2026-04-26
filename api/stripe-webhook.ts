@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Stripe from 'stripe';
-import { getStripeClient } from './_lib/stripe';
+import { getStripeClient, pickStripeWebhookSecret } from './_lib/stripe';
 import { getSupabaseAdmin } from './_lib/supabaseAdmin';
 import { createOrderFromStripeSession, processOrder } from './_lib/orders';
 import { sendSubscriptionWelcomeEmail } from './_lib/resend';
@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const sig = req.headers['stripe-signature'] as string | undefined;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = pickStripeWebhookSecret();
 
   let event: Stripe.Event;
   try {
