@@ -340,8 +340,8 @@ export const NumerologyCalculator = () => {
               <PremiumUpsell language={language} dynamicContent={dynamicContent} settings={settings} />
             )}
 
-            {/* Full 3-tier products showcase (admin-toggled) */}
-            {getSettingBoolean(settings, 'products_showcase_enabled', false) && fullName && birthDay && birthMonth && birthYear && email && (
+            {/* Full 3-tier products showcase (admin-toggled, ON by default) */}
+            {getSettingBoolean(settings, 'products_showcase_enabled', true) && fullName && birthDay && birthMonth && birthYear && email && (
               <ProductsShowcase
                 language={language}
                 fullName={fullName}
@@ -357,6 +357,12 @@ export const NumerologyCalculator = () => {
         <p className="text-[10px] text-muted-foreground font-serif italic tracking-wider">
           Design by Just Bee Brand Agency
         </p>
+        <a
+          href="/admin/login"
+          className="inline-block mt-1 text-[9px] text-muted-foreground/60 hover:text-foreground tracking-widest uppercase"
+        >
+          Admin
+        </a>
       </footer>
     </div>
   );
