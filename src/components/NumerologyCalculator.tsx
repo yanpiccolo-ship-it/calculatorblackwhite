@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Language, translations } from '@/lib/translations';
 import { appConfig } from '@/lib/appConfig';
@@ -37,7 +36,6 @@ interface NumerologyResults {
 }
 
 export const NumerologyCalculator = () => {
-  const navigate = useNavigate();
   const [language, setLanguage] = useState<Language>('en');
   const [fullName, setFullName] = useState('');
   const [birthDay, setBirthDay] = useState('');
@@ -83,7 +81,7 @@ export const NumerologyCalculator = () => {
     return re.test(email);
   };
 
-  const handleCalculate = async () => {
+  const handleCalculate = () => {
     if (!fullName.trim() || !birthDay || !birthMonth || !birthYear || !email) {
       toast({
         title: getText('fillRequired'),
@@ -101,32 +99,6 @@ export const NumerologyCalculator = () => {
     }
 
     setIsCalculating(true);
-
-    // Capture Lead / Register User for "Esencia" Plan
-    try {
-      // Create user with metadata for lead tracking
-      const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: window.location.origin,
-          data: {
-            full_name: fullName,
-            birth_date: `${birthYear}-${birthMonth}-${birthDay}`,
-            registration_source: 'calculator_lead'
-          }
-        },
-      });
-      if (authError) console.error('Lead capture error:', authError);
-      
-      // Store in 'user_roles' or metadata-accessible profiles for the Dashboard
-      // Note: profiles table check if it exists in schema
-      if (authData?.user) {
-         console.log('User captured as lead:', authData.user);
-      }
-    } catch (err) {
-      console.error('Lead capture failed:', err);
-    }
 
     // Calculate numerology results
     const destiny = calculateDestinyNumber(fullName);
@@ -153,7 +125,6 @@ export const NumerologyCalculator = () => {
           name: fullName,
           numerologyResult: destiny.finalNumber,
           archetypeResult: archetypeString,
-          language: language // Pass selected language
         },
       }).catch(err => console.error('Mailchimp subscription error:', err));
     }

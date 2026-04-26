@@ -14,8 +14,8 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminGateway from "./pages/AdminGateway";
 import PartnerPanel from "./pages/PartnerPanel";
 import Pricing from "./pages/Pricing";
-import OrderSuccess from "./pages/OrderSuccess";
-import ReportPreview from "./pages/ReportPreview";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutCancel from "./pages/CheckoutCancel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,21 +51,14 @@ const App = () => (
             <Route path="/admin-gateway" element={<AdminGateway />} />
             <Route path="/partner-panel" element={<PartnerPanel />} />
             <Route path="/pricing" element={<Pricing />} />
-            <Route path="/success" element={<OrderSuccess />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            <Route path="/checkout/cancel" element={<CheckoutCancel />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin"
               element={
                 <ProtectedRoute requireAdmin>
                   <Admin />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/report-preview/:orderId"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <ReportPreview />
                 </ProtectedRoute>
               }
             />

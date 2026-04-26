@@ -38,8 +38,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Page Structure
 - `/` - Main numerology calculator (Index page)
+- `/checkout/success` - Stripe checkout success landing page
+- `/checkout/cancel` - Stripe checkout cancel landing page
 - `/admin` - Protected admin panel for content/settings management
 - `/admin/login` - Admin authentication page
+
+### Stripe Checkout Integration
+- Server logic: `api/_lib/stripe.ts` (creates Stripe Checkout sessions; product catalog with `premium_pdf`, `complete_report`, `master_premium`)
+- Production handler: `api/create-checkout-session.ts` (Vercel serverless function)
+- Dev handler: `vite-plugins/stripe-api.ts` (Vite middleware that mirrors the serverless route at `/api/create-checkout-session`)
+- Frontend helper: `src/lib/stripeCheckout.ts` (`createCheckoutSession()`)
+- Triggered from `src/components/PremiumUpsell.tsx`; redirects the browser to Stripe-hosted checkout
+- Required env var: `STRIPE_SECRET_KEY` (test or live)
 
 ## External Dependencies
 
@@ -55,34 +65,8 @@ Preferred communication style: Simple, everyday language.
 - `user_roles`: Role assignments for admin access
 
 ### Third-Party Integrations
-- **Mailchimp**: Email collection via `supabase/functions/mailchimp-subscribe/` edge function (CRM only)
-- **Stripe**: Payment checkout via `supabase/functions/create-checkout/` edge function
-- **Stripe Webhook**: `supabase/functions/stripe-webhook/` — auto-triggers report generation on payment
-- **Gemini 1.5 Flash/Pro** (primary): Report generation — free tier, `GEMINI_API_KEY` required
-- **OpenAI GPT-4o** (fallback): Report generation fallback if Gemini fails, `OPENAI_API_KEY` required
-- **Resend**: Transactional email delivery via `supabase/functions/send-report-email/`, `RESEND_API_KEY` required (free: 100 emails/day)
-
-### Report Products
-- **Complete Report (€29.99)**: 2500-3500 words, includes archetypes, master numbers, meditation, exercises
-- **Master Premium Report (€59.99)**: 4500-6500 words, full spiritual transformation report
-
-### Payment & Reports Flow (Fully Automated)
-1. User clicks "Buy" on `/pricing` → fills form (name, email, birth date)
-2. `create-checkout` edge function creates Stripe session + pending order in Supabase
-3. User completes Stripe payment → redirected to `/success`
-4. `stripe-webhook` confirms payment → auto-triggers `generate-report`
-5. `generate-report` uses Gemini (free, fallback OpenAI) → stores report text → auto-calls `send-report-email`
-6. `send-report-email` uses Resend API → delivers styled HTML email → marks order as "sent"
-7. Admin can review via "Reportes Maestros" tab — visual cards with Tarot + Jungian archetypes
-8. Admin can use "Herramientas" tab — live numerology calculator with Tarot de Marseille for any person
-
-### Admin Dashboard Tabs
-- **Pedidos**: Manage all orders (generate, edit, PDF, resend email, mark sent, CSV export)
-- **Reportes Maestros**: Visual report cards with Tarot cards, shadow/light, expandable full report
-- **Herramientas**: Live numerology calculator with Tarot archetypes, personal year timeline, compatibility
-- **Configuración**: Stripe, Mailchimp, pricing settings
-- **Contenido**: CMS for multilingual UI text
-- **Licencias**: Domain-based license management
+- **Mailchimp**: Email collection configuration in `src/lib/appConfig.ts` (API key, list ID, server)
+- **External Checkout**: Configurable checkout URL for premium PDF reports
 
 ### Key NPM Packages
 - `@supabase/supabase-js`: Supabase client

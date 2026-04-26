@@ -29,17 +29,17 @@ export const ResultCard = ({
 
   return (
     <div
-      className="card-elegant p-5 border border-border/40 hover:border-[#D4AF37]/30 transition-all duration-500 group animate-in slide-in-from-bottom-4"
+      className="card-elegant slide-up"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex flex-col md:flex-row md:items-start gap-6">
         <div className="flex-shrink-0 text-center md:text-left">
-          <span className="result-number !text-[#D4AF37]">{result.finalNumber}</span>
+          <span className="result-number">{result.finalNumber}</span>
         </div>
         
         <div className="flex-1 space-y-3">
           <div>
-            <h3 className="section-heading text-foreground group-hover:text-[#D4AF37] transition-colors duration-300">{title}</h3>
+            <h3 className="section-heading text-foreground">{title}</h3>
             <p className="text-sm text-muted-foreground mt-1">{description}</p>
           </div>
           
