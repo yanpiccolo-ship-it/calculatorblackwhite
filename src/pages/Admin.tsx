@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LogOut, Save, Plus, Trash2, Search, Settings, Languages, Hash, MessageSquare, Sparkles, DollarSign, Mail, Link, Key } from 'lucide-react';
+import { Loader2, LogOut, Save, Plus, Trash2, Search, Settings, Languages, Hash, MessageSquare, Sparkles, DollarSign, Mail, Link, Key, ShoppingBag } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LicensesPanel } from '@/components/LicensesPanel';
+import { OrdersPanel } from '@/components/admin/OrdersPanel';
 
 const CONTENT_TYPES = [
   { value: 'ui_label', label: 'UI Labels', icon: Settings },
@@ -391,8 +392,12 @@ const Admin = () => {
 
       {/* Main Tabs: Settings vs Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <Tabs defaultValue="settings">
+        <Tabs defaultValue="orders">
           <TabsList className="mb-6">
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              Órdenes
+            </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configuration
@@ -406,6 +411,11 @@ const Admin = () => {
               Licenses
             </TabsTrigger>
           </TabsList>
+
+          {/* Orders Tab */}
+          <TabsContent value="orders">
+            <OrdersPanel />
+          </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings">

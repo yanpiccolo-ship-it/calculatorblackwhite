@@ -46,10 +46,48 @@ Preferred communication style: Simple, everyday language.
 ### Stripe Checkout Integration
 - Server logic: `api/_lib/stripe.ts` (creates Stripe Checkout sessions; product catalog with `premium_pdf`, `complete_report`, `master_premium`)
 - Production handler: `api/create-checkout-session.ts` (Vercel serverless function)
-- Dev handler: `vite-plugins/stripe-api.ts` (Vite middleware that mirrors the serverless route at `/api/create-checkout-session`)
+- Dev handler: `vite-plugins/stripe-api.ts` (Vite middleware that mirrors all 3 API routes)
 - Frontend helper: `src/lib/stripeCheckout.ts` (`createCheckoutSession()`)
-- Triggered from `src/components/PremiumUpsell.tsx`; redirects the browser to Stripe-hosted checkout
+- Triggered from `src/components/PremiumUpsell.tsx` (€9.99 single-button) and `src/components/ProductsShowcase.tsx` (3-tier showcase, gated by `products_showcase_enabled` setting)
 - Required env var: `STRIPE_SECRET_KEY` (test or live)
+
+### Automated Report Fulfillment Pipeline (T030)
+End-to-end flow: Stripe payment → Supabase order → OpenAI report → PDF → email.
+
+**Backend modules** (all under `api/_lib/`):
+- `supabaseAdmin.ts` — service-role Supabase client (server only)
+- `numerologyServer.ts` — server-side port of the numerology calculator
+- `prompts.ts` — master prompts per product (Spanish, multilang output)
+- `openai.ts` — `generateReport()` calls `gpt-4o`
+- `pdf.ts` — `buildReportPdf()` renders Markdown-ish text to A4 PDF via `pdfkit`
+- `resend.ts` — `sendReportEmail()` and `sendSubscriptionWelcomeEmail()`
+- `orders.ts` — `createOrderFromStripeSession()`, `processOrder()`, storage upload
+- `adminAuth.ts` — `assertAdminFromRequest()` validates Supabase JWT + admin role
+
+**API routes**:
+- `POST /api/create-checkout-session` — creates Stripe Checkout
+- `POST /api/stripe-webhook` — handles `checkout.session.completed`, subscription events; triggers `processOrder` async
+- `POST /api/process-order` — admin-only manual trigger (regenerate / resend)
+
+**Admin panel**:
+- New "Órdenes" tab in `/admin` (default) → `src/components/admin/OrdersPanel.tsx`
+- Lists orders, filters by status/product, regenerate + resend + download PDF
+
+**Required Supabase setup** (run once via Supabase SQL editor):
+- File: `supabase/migrations/20260426_orders_and_subscriptions.sql`
+- Creates: `orders`, `subscriptions`, `report_prompts`, `stripe_webhook_events` + RLS + storage bucket `reports`
+
+**Required env vars**:
+- `STRIPE_SECRET_KEY` ✅
+- `STRIPE_WEBHOOK_SECRET` ⚠ set after deploying webhook to dresstyle.world
+- `OPENAI_API_KEY` ✅
+- `RESEND_API_KEY` ✅
+- `SUPABASE_URL` + `SERVICE_ROLE_KEY` ✅
+- `EMAIL_FROM` ✅ (`Numerology Reading <numerology.reading@dresstyle.world>`)
+- `APP_URL` ✅ (`https://dresstyle.world`)
+
+**Feature toggle**:
+- `products_showcase_enabled` setting in `app_settings` controls whether the 3-tier showcase is visible on the calculator. Default: false.
 
 ## External Dependencies
 

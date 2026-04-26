@@ -1,21 +1,33 @@
 import type { Plugin } from 'vite';
 import { createCheckoutSession, type CheckoutSessionRequest } from '../api/_lib/stripe';
+import { processOrder } from '../api/_lib/orders';
 
-function readBody(req: any): Promise<CheckoutSessionRequest> {
+function readJson<T = any>(req: any): Promise<T> {
   return new Promise((resolve) => {
     let data = '';
     req.on('data', (chunk: Buffer) => {
       data += chunk.toString();
     });
     req.on('end', () => {
-      if (!data) return resolve({});
+      if (!data) return resolve({} as T);
       try {
         resolve(JSON.parse(data));
       } catch {
-        resolve({});
+        resolve({} as T);
       }
     });
-    req.on('error', () => resolve({}));
+    req.on('error', () => resolve({} as T));
+  });
+}
+
+function readRaw(req: any): Promise<Buffer> {
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (c: Buffer) =>
+      chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)),
+    );
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', () => resolve(Buffer.alloc(0)));
   });
 }
 
@@ -25,43 +37,99 @@ function getOrigin(req: any): string {
   return `${proto}://${host}`;
 }
 
+function setCors(res: any) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, OPTIONS',
+  );
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, x-admin-token, stripe-signature',
+  );
+}
+
+function sendJson(res: any, status: number, body: unknown) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(body));
+}
+
 export function stripeApiPlugin(): Plugin {
   return {
     name: 'stripe-api-dev',
     configureServer(server) {
+      // 1) Create Stripe Checkout session
       server.middlewares.use('/api/create-checkout-session', async (req, res) => {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-        if (req.method === 'OPTIONS') {
-          res.statusCode = 204;
-          res.end();
-          return;
-        }
-
-        if (req.method !== 'POST') {
-          res.statusCode = 405;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Method not allowed' }));
-          return;
-        }
-
+        setCors(res);
+        if (req.method === 'OPTIONS') return void (res.statusCode = 204) || res.end();
+        if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
         try {
-          const body = await readBody(req);
+          const body = await readJson<CheckoutSessionRequest>(req);
           const origin = getOrigin(req);
           const session = await createCheckoutSession(body, origin);
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify(session));
+          sendJson(res, 200, session);
         } catch (err) {
-          const message =
-            err instanceof Error ? err.message : 'Failed to create checkout session';
-          // eslint-disable-next-line no-console
+          const message = err instanceof Error ? err.message : 'Failed to create checkout session';
           console.error('[stripe-api-dev]', message);
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: message }));
+          sendJson(res, 500, { error: message });
+        }
+      });
+
+      // 2) Stripe webhook (dev: no signature check unless STRIPE_WEBHOOK_SECRET is set)
+      server.middlewares.use('/api/stripe-webhook', async (req, res) => {
+        setCors(res);
+        if (req.method === 'OPTIONS') return void (res.statusCode = 204) || res.end();
+        if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+        try {
+          // Lazy-import so we don't hard-fail in dev when Supabase env is missing
+          const handler = (await import('../api/stripe-webhook')).default;
+          // Reconstruct req body for the handler that reads raw stream
+          const raw = await readRaw(req);
+          const fakeReq: any = Object.assign(req, {
+            on: (event: string, cb: any) => {
+              if (event === 'data') cb(raw);
+              if (event === 'end') cb();
+              return fakeReq;
+            },
+          });
+          const fakeRes: any = Object.assign(res, {
+            status: (code: number) => {
+              res.statusCode = code;
+              return fakeRes;
+            },
+            json: (data: any) => sendJson(res, res.statusCode || 200, data),
+          });
+          await handler(fakeReq, fakeRes);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('[stripe-webhook-dev]', message);
+          sendJson(res, 500, { error: message });
+        }
+      });
+
+      // 3) Manual order re-processing (admin "Generate" / "Resend" buttons)
+      server.middlewares.use('/api/process-order', async (req, res) => {
+        setCors(res);
+        if (req.method === 'OPTIONS') return void (res.statusCode = 204) || res.end();
+        if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+        try {
+          const { assertAdminFromRequest } = await import('../api/_lib/adminAuth');
+          await assertAdminFromRequest(req as any);
+        } catch (err) {
+          return sendJson(res, 401, {
+            error: err instanceof Error ? err.message : 'Unauthorized',
+          });
+        }
+        try {
+          const body = await readJson<{ orderId?: string }>(req);
+          if (!body.orderId) return sendJson(res, 400, { error: 'orderId required' });
+          const result = await processOrder(body.orderId);
+          sendJson(res, 200, result);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('[process-order-dev]', message);
+          sendJson(res, 500, { error: message });
         }
       });
     },
