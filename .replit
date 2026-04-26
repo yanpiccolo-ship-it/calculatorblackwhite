@@ -38,6 +38,10 @@ externalPort = 80
 localPort = 5001
 externalPort = 3001
 
+[[ports]]
+localPort = 5050
+externalPort = 3002
+
 [userenv]
 
 [userenv.shared]
@@ -45,3 +49,8 @@ VITE_SUPABASE_URL = "https://nyukbjuktrqhpthcvqyj.supabase.co"
 SUPABASE_URL = "https://nyukbjuktrqhpthcvqyj.supabase.co"
 EMAIL_FROM = "Numerology Reading <numerology.reading@dresstyle.world>"
 APP_URL = "https://dresstyle.world"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start"]
+build = ["npm", "run", "build"]
