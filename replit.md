@@ -38,8 +38,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Page Structure
 - `/` - Main numerology calculator (Index page)
+- `/checkout/success` - Stripe checkout success landing page
+- `/checkout/cancel` - Stripe checkout cancel landing page
 - `/admin` - Protected admin panel for content/settings management
 - `/admin/login` - Admin authentication page
+
+### Stripe Checkout Integration
+- Server logic: `api/_lib/stripe.ts` (creates Stripe Checkout sessions; product catalog with `premium_pdf`, `complete_report`, `master_premium`)
+- Production handler: `api/create-checkout-session.ts` (Vercel serverless function)
+- Dev handler: `vite-plugins/stripe-api.ts` (Vite middleware that mirrors the serverless route at `/api/create-checkout-session`)
+- Frontend helper: `src/lib/stripeCheckout.ts` (`createCheckoutSession()`)
+- Triggered from `src/components/PremiumUpsell.tsx`; redirects the browser to Stripe-hosted checkout
+- Required env var: `STRIPE_SECRET_KEY` (test or live)
 
 ## External Dependencies
 

@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Language, translations } from '@/lib/translations';
 import { AppContent, getContentValue } from '@/hooks/useAppContent';
 import { AppSetting, getSettingValue, getSettingNumber } from '@/hooks/useAppSettings';
-import { FileText, Sparkles, ChevronRight } from 'lucide-react';
+import { FileText, Sparkles, ChevronRight, Loader2 } from 'lucide-react';
+import { createCheckoutSession } from '@/lib/stripeCheckout';
+import { toast } from 'sonner';
 
 export interface PremiumUpsellProps {
   language: Language;
@@ -11,12 +14,12 @@ export interface PremiumUpsellProps {
 
 export const PremiumUpsell = ({ language, dynamicContent, settings }: PremiumUpsellProps) => {
   const staticT = translations[language];
-  
+  const [isLoading, setIsLoading] = useState(false);
+
   // Get pricing from database settings
   const price = getSettingNumber(settings, 'premium_price', 9.99);
   const currency = getSettingValue(settings, 'premium_currency', 'USD');
   const currencySymbol = getSettingValue(settings, 'premium_currency_symbol', '$');
-  const checkoutUrl = getSettingValue(settings, 'premium_checkout_url', 'https://your-shop.com/checkout');
 
   // Helper to get text - tries database first, falls back to static
   const getText = (key: string): string => {
@@ -27,8 +30,24 @@ export const PremiumUpsell = ({ language, dynamicContent, settings }: PremiumUps
     return staticT[key] || key;
   };
 
-  const handleBuyClick = () => {
-    window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+  const handleBuyClick = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const session = await createCheckoutSession({
+        productKey: 'premium_pdf',
+        productName: getText('premiumTitle'),
+        amount: Math.round(price * 100),
+        currency: (currency || 'USD').toLowerCase(),
+        metadata: { language },
+      });
+      window.location.href = session.url;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to start checkout';
+      toast.error(message);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,9 +97,14 @@ export const PremiumUpsell = ({ language, dynamicContent, settings }: PremiumUps
           
           <button
             onClick={handleBuyClick}
-            className="w-full sm:w-auto bg-foreground text-background font-medium px-6 py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors"
+            disabled={isLoading}
+            className="w-full sm:w-auto bg-foreground text-background font-medium px-6 py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <FileText className="w-4 h-4" />
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileText className="w-4 h-4" />
+            )}
             {getText('buyFullReport')}
           </button>
         </div>
