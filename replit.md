@@ -116,6 +116,13 @@ End-to-end flow: Stripe payment → Supabase order → OpenAI report → PDF →
 - `sonner` + custom toaster: Toast notifications
 
 ### Deployment
-- Configured for Vercel deployment (`vercel.json` with CSP and iframe headers)
-- Development server runs on port 5000
+- **Replit Autoscale** (configured): `npm run build` → `npm run start` (Express server in `server/index.ts`)
+- The Express server serves the built `dist/` SPA and mounts the three API routes (`/api/create-checkout-session`, `/api/stripe-webhook` with raw body, `/api/process-order`).
+- Also Vercel-compatible (`vercel.json` with CSP and iframe headers) — the same `api/*.ts` files are imported by both runtimes.
+- Development server runs on port 5000 (Vite + middleware in `vite-plugins/stripe-api.ts`)
 - Test framework: Vitest with jsdom environment
+
+### Supabase bootstrap (one-time, run by user)
+The app's database lives in the user's Supabase project (`nyukbjuktrqhpthcvqyj`). The user must paste two SQL files into the Supabase SQL editor:
+1. `supabase/migrations/_BOOTSTRAP_RUN_ME.sql` — creates `user_roles`, `orders`, `subscriptions`, `report_prompts`, `stripe_webhook_events`, RLS policies, triggers, and the `reports` storage bucket. Idempotent.
+2. `supabase/migrations/_MAKE_ME_ADMIN.sql` — grants `admin` role to the user's email (must edit the email at the top first).
