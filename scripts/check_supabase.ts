@@ -1,0 +1,10 @@
+import { createClient } from '@supabase/supabase-js';
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const key = process.env.SERVICE_ROLE_KEY;
+console.log('URL:', url ? url.slice(0, 30) + '...' : 'MISSING');
+console.log('SERVICE_ROLE_KEY:', key ? 'SET' : 'MISSING');
+const sb = createClient(url!, key!, { auth: { persistSession: false } });
+const r = await sb.from('orders').select('id', { count: 'exact', head: true });
+console.log('orders:', r.error ? 'ERR: ' + r.error.message : 'OK count=' + r.count);
+const b = await sb.storage.listBuckets();
+console.log('buckets:', b.error ? 'ERR: ' + b.error.message : b.data!.map((x) => x.id).join(','));
