@@ -12,8 +12,12 @@ function pickStripeApiKey(): string {
     process.env.STRIPE_KEY,
   ].filter((v): v is string => Boolean(v && v.length > 0));
 
-  const valid = candidates.find((v) => /^(sk|rk)_(live|test)_/.test(v));
-  if (valid) return valid;
+  // Prefer full secret keys (sk_) over restricted keys (rk_) — restricted
+  // keys often lack the permissions needed to create checkout sessions.
+  const sk = candidates.find((v) => /^sk_(live|test)_/.test(v));
+  if (sk) return sk;
+  const rk = candidates.find((v) => /^rk_(live|test)_/.test(v));
+  if (rk) return rk;
 
   // No properly-prefixed key was found — surface the clearest possible error.
   const present = candidates

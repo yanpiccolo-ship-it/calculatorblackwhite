@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/select';
 import { LanguageSelector } from './LanguageSelector';
 import { ResultCard } from './ResultCard';
-import { PremiumUpsell } from './PremiumUpsell';
 import { ProductsShowcase } from './ProductsShowcase';
 import { Sparkles, Mail, Calendar, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -334,11 +333,6 @@ export const NumerologyCalculator = () => {
                 />
               )}
             </div>
-
-            {/* Premium Upsell at the very end */}
-            {getSettingBoolean(settings, 'premium_enabled', true) && (
-              <PremiumUpsell language={language} dynamicContent={dynamicContent} settings={settings} />
-            )}
 
             {/* Full 3-tier products showcase (admin-toggled, ON by default) */}
             {getSettingBoolean(settings, 'products_showcase_enabled', true) && fullName && birthDay && birthMonth && birthYear && email && (

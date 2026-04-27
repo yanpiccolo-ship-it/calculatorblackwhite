@@ -135,11 +135,12 @@ export const ProductsShowcase = ({
           return (
             <div
               key={tier.key}
-              className={`relative rounded-xl border p-5 flex flex-col bg-white transition-shadow hover:shadow-md ${
+              className={`relative rounded-xl border p-5 flex flex-col transition-shadow hover:shadow-md ${
                 tier.highlight
-                  ? 'border-foreground shadow-sm ring-1 ring-foreground/10'
+                  ? 'bg-white border-foreground shadow-sm ring-1 ring-foreground/10'
                   : 'border-border'
               }`}
+              style={tier.highlight ? undefined : { backgroundColor: '#EBEBEB' }}
             >
               {tier.highlight && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-foreground text-background text-[10px] uppercase tracking-wider font-medium px-2.5 py-1 rounded-full">
@@ -177,7 +178,7 @@ export const ProductsShowcase = ({
                 className={`mt-5 w-full font-medium px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                   tier.highlight
                     ? 'bg-foreground text-background hover:bg-foreground/90'
-                    : 'bg-white text-foreground border border-foreground hover:bg-foreground hover:text-background'
+                    : 'bg-foreground/5 text-foreground border border-foreground hover:bg-foreground hover:text-background'
                 }`}
               >
                 {isLoading ? (
