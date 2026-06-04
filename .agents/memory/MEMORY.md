@@ -1,0 +1,3 @@
+- [AI report generation](ai-report.md) — Gemini 1.5 Flash (free) is primary; GEMINI_API_KEY already set in env. OpenAI is fallback. Entry point: api/_lib/openai.ts exports generateReport().
+- [Email pipeline](email-pipeline.md) — Unified sender in api/_lib/email.ts: Gmail SMTP (nodemailer, free, no domain verify) primary; Resend fallback. GMAIL_USER + GMAIL_APP_PASSWORD needed from user.
+- [Prompts architecture](prompts-arch.md) — Three tiers in api/_lib/prompts.ts: Initial (1500-2200w), Complete (3000-4500w), Master (5500-8000w). Sections: Jung archetypes, vocación, pareja, aprendizajes, propósito, ciclos de vida.

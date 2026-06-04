@@ -1,18 +1,13 @@
-// Master prompts for AI report generation, derived from the
-// "NumerologyCalculatorBW_MasterPrompt_Informes" PDF.
+// Master prompts — Numerología Evolutiva con Arquetipos de Jung
+// Enhanced: adds Vocación, Pareja/Relaciones, Aprendizajes, Propósito, Ciclos
 
 import type { NumerologyProfile } from './numerologyServer';
 
 export type ProductKey = 'premium_pdf' | 'complete_report' | 'master_premium';
 
 const LANG_NAME: Record<string, string> = {
-  en: 'English',
-  es: 'Spanish',
-  fr: 'French',
-  it: 'Italian',
-  de: 'German',
-  pt: 'Portuguese',
-  ru: 'Russian',
+  en: 'English', es: 'Spanish', fr: 'French', it: 'Italian',
+  de: 'German', pt: 'Portuguese', zh: 'Chinese', ja: 'Japanese', ru: 'Russian',
 };
 
 interface BuildArgs {
@@ -31,12 +26,6 @@ interface BuiltPrompt {
   title: string;
 }
 
-const COMMON_STYLE = `Estilo: profundo, sabio, claro, inspirador, espiritual.
-Estructura el texto en secciones bien diferenciadas con encabezados Markdown (##).
-Reconoce siempre los números maestros (11, 22, 33, 44) y profundiza en su responsabilidad espiritual cuando aparezcan.
-Integra interpretación arquetípica para cada número (ej: 1 — El Pionero, 22 — El Arquitecto del Mundo, 44 — El Maestro Constructor del Destino).
-Incluye SIEMPRE: meditación guiada, ejercicio práctico de integración y mensaje final inspirador.`;
-
 const PRODUCT_TITLES: Record<ProductKey, string> = {
   premium_pdf: 'Initial Insight Report',
   complete_report: 'Complete Report — Fundamental Guidance',
@@ -44,20 +33,44 @@ const PRODUCT_TITLES: Record<ProductKey, string> = {
 };
 
 const PRODUCT_WORD_RANGES: Record<ProductKey, [number, number]> = {
-  premium_pdf: [1200, 1800],
-  complete_report: [2500, 3500],
-  master_premium: [4500, 6500],
+  premium_pdf:     [1500, 2200],
+  complete_report: [3000, 4500],
+  master_premium:  [5500, 8000],
 };
 
+// Jung archetypes mapped to numerology (for prompt context)
+const JUNG_ARCHETYPES: Record<number, string> = {
+  1: 'El Héroe (The Hero) — trailblazer, independent, driven to forge a new path.',
+  2: 'El Amante (The Lover) — connector, empathetic, motivated by relationship and beauty.',
+  3: 'El Bufón/Creador (The Jester/Creator) — joyful, expressive, moves through creativity and play.',
+  4: 'El Cuidador (The Caregiver) — devoted, responsible, serves from strength not guilt.',
+  5: 'El Explorador (The Explorer) — freedom-seeking, curious, never truly settled.',
+  6: 'El Sabio (The Sage) — truth-seeking, analytical, values knowledge above comfort.',
+  7: 'El Sabio Hermético (The Hermit/Sage) — introspective, mystical, withdraws to find depth.',
+  8: 'El Gobernante (The Ruler) — authoritative, strategic, creates order and abundance.',
+  9: 'El Inocente/Humanitario (The Innocent/Everyman) — optimistic, compassionate, seeks universal love.',
+  11: 'El Visionario / Mago (The Visionary/Magician) — intuitive channel between worlds, inspires transformation.',
+  22: 'El Arquitecto / Rey (The Architect/King) — brings heavenly blueprints into earthly reality.',
+  33: 'El Gran Maestro / Ama (The Great Teacher/Lover) — embodies unconditional love, teaches through being.',
+  44: 'El Constructor Maestro (The Master Builder) — builds enduring structures that serve generations.',
+};
+
+const COMMON_STYLE = `ESTILO: profundo, sabio, inspirador, espiritual y aplicable. Sin clichés.
+Formato: secciones con encabezados Markdown ##. Listas con guiones donde ayude.
+IMPORTANTE: Reconoce siempre los números maestros (11, 22, 33, 44) y su responsabilidad espiritual.
+Cada arquetipo de Jung debe conectarse explícitamente con el número del consultante.`;
+
 function profileBlock(p: NumerologyProfile): string {
+  const jungNote = JUNG_ARCHETYPES[p.lifePath] ?? '';
   return `Nombre completo: ${p.fullName}
 Fecha de nacimiento: ${p.birthDate}
 Número de vida (Life Path): ${p.lifePath}${p.isMaster ? ' ★ MAESTRO' : ''}
+Arquetipo de Jung asociado: ${jungNote}
 Número del alma: ${p.soul}
 Número de personalidad: ${p.personality}
 Número de expresión / destino: ${p.expression}
 Año personal actual: ${p.personalYear}
-Números kármicos detectados: ${p.karmic.length ? p.karmic.join(', ') : 'ninguno'}`;
+Números kármicos: ${p.karmic.length ? p.karmic.join(', ') : 'ninguno'}`;
 }
 
 export function buildPrompt({ product, profile, language = 'en' }: BuildArgs): BuiltPrompt {
@@ -65,100 +78,185 @@ export function buildPrompt({ product, profile, language = 'en' }: BuildArgs): B
   const [minW, maxW] = PRODUCT_WORD_RANGES[product];
   const data = profileBlock(profile);
 
+  // ── INITIAL INSIGHT ────────────────────────────────────────────────────
   if (product === 'premium_pdf') {
     return {
       title: PRODUCT_TITLES[product],
-      model: 'gpt-4o',
+      model: 'gemini-1.5-flash',
       temperature: 0.85,
-      maxTokens: 3500,
+      maxTokens: 4000,
       wordRange: [minW, maxW],
-      system: `Eres un numerólogo experto en arquetipos, evolución del alma y crecimiento personal.
-Generas el "Initial Insight Report" — el primer informe de pago, puente entre el lead magnet gratuito y los informes superiores.
-Debe sentirse como una primera revelación útil y aplicable.
+      system: `Eres un numerólogo profesional especializado en arquetipos de Jung, evolución del alma y desarrollo personal aplicado.
+Generas el "Initial Insight Report" — la primera revelación numerológica de pago.
+Debe sentirse como una lectura profunda, personal y aplicable desde el primer párrafo.
 ${COMMON_STYLE}
 IMPORTANTE: escribe TODO el informe en ${langName}.`,
       user: `Genera el Initial Insight Report con base en estos datos:
 
 ${data}
 
-Estructura obligatoria:
-1. Saludo personalizado y propósito del informe.
-2. Tu Número de Vida: arquetipo central, propósito y don principal.
-3. Tu Número del Alma: motivación profunda y deseos del corazón.
-4. Tu Número de Personalidad: cómo te perciben los demás.
-5. Tu Año Personal (${profile.personalYear}): energía dominante y oportunidades del ciclo actual.
-6. Aplicación práctica: 3 acciones concretas para esta semana.
-7. Meditación corta (5 minutos) basada en tu número de vida.
-8. Mensaje final inspirador.
+ESTRUCTURA OBLIGATORIA (8 secciones):
 
-Extensión: ${minW}–${maxW} palabras. Tono cercano, claro y directo.`,
+## 1. Apertura energética
+Saludo cálido y personalizado. Explica el propósito del informe y qué revelará.
+
+## 2. Tu Número de Vida: ${p.lifePath}${p.isMaster ? ' ★ MAESTRO' : ''}
+Arquetipo de Jung: ${JUNG_ARCHETYPES[p.lifePath] ?? ''}
+Explica propósito central, don principal, desafío evolutivo y cómo se manifiesta en la vida cotidiana.
+
+## 3. Alma y Personalidad
+Número del Alma ${p.soul}: motivación profunda, deseos del corazón, lo que te nutre.
+Número de Personalidad ${p.personality}: cómo te perciben, primera impresión, energía social.
+
+## 4. Año Personal ${p.personalYear}: el clima de este ciclo
+Energía dominante, oportunidades concretas, qué decisiones favorece este año.
+
+## 5. Vocación y vida laboral
+Qué tipo de trabajo o entorno alimenta tu número de vida. Talentos naturales para el ámbito profesional. Qué deberías evitar y hacia dónde apuntar.
+
+## 6. Pareja y relaciones
+Cómo el ${p.soul} afecta tus vínculos afectivos. Qué buscas en una pareja. Patrones relacionales que podrías sanar.
+
+## 7. Acciones prácticas: 3 pasos para esta semana
+Tres acciones concretas, aplicables hoy, alineadas con la energía de tu mapa numerológico.
+
+## 8. Meditación y cierre
+Meditación guiada de 5 minutos basada en tu número de vida.
+Mensaje final inspirador y personalizado.
+
+Extensión: ${minW}–${maxW} palabras. Tono cercano, claro y profundo.`,
     };
   }
 
+  // ── COMPLETE REPORT ────────────────────────────────────────────────────
   if (product === 'complete_report') {
     return {
       title: PRODUCT_TITLES[product],
-      model: 'gpt-4o',
+      model: 'gemini-1.5-flash',
       temperature: 0.85,
-      maxTokens: 6000,
+      maxTokens: 7000,
       wordRange: [minW, maxW],
-      system: `Eres un numerólogo experto en arquetipos, evolución del alma y crecimiento personal.
-Generas el "Complete Report — Fundamental Guidance".
+      system: `Eres un experto en numerología evolutiva, arquetipos de Jung y psicología transpersonal.
+Generas el "Complete Report — Fundamental Guidance": una lectura completa de identidad numerológica.
 ${COMMON_STYLE}
 IMPORTANTE: escribe TODO el informe en ${langName}.`,
-      user: `Genera un informe profundo de numerología y arquetipos basado en:
+      user: `Genera el Complete Report con base en estos datos:
 
 ${data}
 
-Estructura obligatoria (12 secciones):
-1. Introducción a la numerología evolutiva y los arquetipos.
-2. Número de Vida: propósito de vida, talentos principales, desafíos evolutivos, lecciones del alma. Si es maestro (11/22/33/44) explica significado, potencial espiritual y responsabilidad energética.
-3. Arquetipo Numerológico (1—El Pionero, 2—El Mediador, 3—El Creador, 4—El Constructor, 5—El Explorador, 6—El Cuidador, 7—El Sabio, 8—El Líder, 9—El Humanitario, 11—El Visionario, 22—El Arquitecto del Mundo, 33—El Maestro del Amor, 44—El Maestro Constructor del Destino).
-4. Número del Alma: motivación profunda, deseos del corazón, conexión espiritual y relación con el amor.
-5. Número de Personalidad: energía social, primera impresión, modo de relacionarse.
-6. Talentos y Expresión: creatividad, habilidades naturales, potencial profesional.
-7. Números Kármicos (13, 14, 16, 19): si aplican, explica lecciones pendientes y oportunidades.
-8. Áreas de Vida: trabajo y vocación, relaciones, crecimiento personal, trabajo colectivo.
-9. Año Personal (${profile.personalYear}): energía dominante, oportunidades, decisiones importantes.
-10. Ejercicio de integración (journaling con preguntas de autoconocimiento).
-11. Meditación numerológica guiada de 5 minutos basada en el número de vida.
-12. Mensaje final inspirador.
+ESTRUCTURA OBLIGATORIA (13 secciones):
+
+## 1. Introducción: el lenguaje de los números
+Explica qué es la numerología evolutiva y cómo los arquetipos de Jung se integran en esta lectura.
+
+## 2. Número de Vida: ${p.lifePath}${p.isMaster ? ' ★ MAESTRO' : ''} — Propósito y Misión
+Propósito de vida, talentos principales, desafíos evolutivos, lecciones del alma.
+${p.isMaster ? 'Explica el rol espiritual especial del número maestro y su responsabilidad energética.' : ''}
+
+## 3. Arquetipo de Jung: ${JUNG_ARCHETYPES[p.lifePath] ?? 'el arquetipo central'}
+Análisis profundo del arquetipo asociado. Cómo se manifiesta en la sombra y en la luz. Integración práctica.
+
+## 4. Alma y corazón: Número del Alma ${p.soul}
+Motivación profunda, deseos del corazón, conexión espiritual y qué te da verdadera satisfacción.
+
+## 5. Personalidad y expresión social: ${p.personality} y ${p.expression}
+Cómo te relacionas, tu energía social, talentos creativos y potencial de expresión.
+
+## 6. Vocación, trabajo y potencial profesional
+Análisis detallado del camino vocacional según tu mapa numerológico. Entornos ideales, estilo de liderazgo, talentos que el mercado puede valorar. Qué tipo de trabajo drena tu energía y qué la eleva.
+
+## 7. Pareja, amor y compatibilidad energética
+Patrones afectivos según el número del alma. Lo que buscas (consciente e inconscientemente) en una pareja. Dinámicas de pareja que potencian o bloquean tu crecimiento. Cómo amar desde tu número.
+
+## 8. Familia y vínculos profundos
+Rol en la familia de origen y en la que construyes. Patrones de apego y cómo sanarlos.
+
+## 9. Aprendizajes y habilidades por desarrollar
+Qué habilidades, conocimientos o áreas de vida pide tu número de vida que expandas en esta etapa. Cómo aprendes mejor. Qué sabidurías aún están dormidas.
+
+## 10. Números kármicos: ${p.karmic.length ? p.karmic.join(', ') : 'sin kármicos detectados'}
+${p.karmic.length ? 'Análisis de cada número kármico: lección pendiente, patrones repetitivos y cómo integrarlo.' : 'Explica qué significa no tener kármicos y cómo aprovechar esta libertad.'}
+
+## 11. Año Personal ${p.personalYear}: estrategia de este ciclo
+Energía dominante, oportunidades únicas, decisiones clave, qué cerrar y qué abrir.
+
+## 12. Ejercicio de integración (journaling)
+5 preguntas de autoconocimiento profundo, con espacio para reflexión genuina.
+
+## 13. Meditación + mensaje final
+Meditación numerológica guiada de 7 minutos. Mensaje inspirador personalizado y poderoso.
 
 Extensión: ${minW}–${maxW} palabras.`,
     };
   }
 
-  // master_premium
+  // ── MASTER PREMIUM ─────────────────────────────────────────────────────
   return {
     title: PRODUCT_TITLES[product],
-    model: 'gpt-4o',
+    model: 'gemini-1.5-flash',
     temperature: 0.9,
-    maxTokens: 9000,
+    maxTokens: 12000,
     wordRange: [minW, maxW],
-    system: `Eres un numerólogo experto, analista de arquetipos y guía de evolución espiritual.
-Generas el "Master Premium Report — Absolute Revelation": una lectura transformadora del alma.
+    system: `Eres un maestro en numerología sagrada, arquetipos de Jung, astrología del alma y evolución espiritual.
+Generas el "Master Premium Report — Absolute Revelation": la lectura más completa y transformadora posible.
+Cada sección debe ser profunda, original y conectada con la realidad específica del consultante.
 ${COMMON_STYLE}
 IMPORTANTE: escribe TODO el informe en ${langName}.`,
-    user: `Genera un informe premium extremadamente profundo basado en:
+    user: `Genera el Master Premium Report con base en estos datos:
 
 ${data}
 
-Estructura obligatoria (13 secciones):
-1. Introducción al viaje del alma: cómo la numerología revela propósito, evolución y destino.
-2. Propósito del Alma — interpretación profunda del número de vida: misión espiritual, impacto en el mundo, evolución del alma. Si es maestro, explica rol espiritual en la humanidad.
-3. Arquetipo Maestro central — interpretación arquetípica completa.
-4. Talentos y Potencial — interpretación avanzada del número de expresión.
-5. Desafíos Kármicos — patrones repetitivos y lecciones del alma (incluye los kármicos detectados: ${profile.karmic.join(', ') || 'analizar también ausencia de kármicos'}).
-6. Ciclos de Vida — primer ciclo (formación), segundo ciclo (productividad), tercer ciclo (sabiduría), explicando cada uno con su número regente.
-7. Relaciones y Vínculos — análisis numerológico del amor, familia y asociaciones.
-8. Vocación y Camino Profesional — vocación natural, estilo de liderazgo, misión laboral.
-9. Año Personal Profundo (${profile.personalYear}) — análisis estratégico, decisiones clave, oportunidades.
-10. Plan de Evolución Personal — hábitos, decisiones, enfoque espiritual con acciones concretas.
-11. Meditación profunda guiada de 10 minutos.
-12. Ritual numerológico para activar el número de vida.
-13. Mensaje del alma — cierre poderoso.
+ESTRUCTURA OBLIGATORIA (15 secciones):
 
-Extensión: ${minW}–${maxW} palabras. Estilo: sabio, espiritual, profundo, transformador.`,
+## 1. Activación del campo de conciencia
+Apertura poderosa. Prepara al lector para una lectura transformadora. Explica el sistema numerológico y junguiano que se usará.
+
+## 2. Mapa del alma completo
+Síntesis de los 5 números principales: ${p.lifePath}, ${p.soul}, ${p.personality}, ${p.expression}, ${p.personalYear}. Cómo dialogan entre sí como un sistema vivo.
+
+## 3. Propósito de vida y misión espiritual: Número ${p.lifePath}${p.isMaster ? ' ★ MAESTRO' : ''}
+Misión espiritual profunda. Impacto en el mundo. Evolución del alma. El regalo único de este número al colectivo.
+${p.isMaster ? 'Explica el rol espiritual de este número maestro en la humanidad y la responsabilidad que conlleva.' : ''}
+
+## 4. Arquetipo de Jung: ${JUNG_ARCHETYPES[p.lifePath] ?? ''}
+Análisis arquetípico completo: la luz y la sombra del arquetipo, su historia universal, cómo vive en esta persona específica, cómo integrarlo conscientemente. Relación entre el arquetipo y los números del alma y personalidad.
+
+## 5. Ciclos de vida: pasado, presente y futuro
+Primer ciclo (formación), segundo ciclo (productividad), tercer ciclo (sabiduría). Qué regente numérológico rige cada fase. En qué ciclo se encuentra el consultante ahora.
+
+## 6. Karma y patrones de liberación
+${p.karmic.length ? `Números kármicos: ${p.karmic.join(', ')}. Análisis profundo de cada uno: qué patrón señala, cómo se manifiesta en la vida real, y cuál es el camino de liberación.` : 'Sin kármicos: lo que esto revela sobre el estado del alma y cómo aprovechar esta libertad para construir.'}
+Patrones repetitivos generales del mapa y cómo disolver los que ya no sirven.
+
+## 7. Talentos y potencial sin explotar
+Análisis del número de expresión ${p.expression}. Talentos visibles y dormidos. Dones que el miedo ha silenciado. Potencial real vs potencial actualizado. Qué pequeño paso activa el talento mayor.
+
+## 8. Vocación, camino profesional y abundancia
+Análisis profundo de la vocación auténtica. Entornos que elevan esta vibración. Estilo de liderazgo natural. Qué tipo de trabajo genera flujo (estado de flow). Relación del mapa numerológico con la abundancia material. Qué creencias bloquean el éxito económico.
+
+## 9. Pareja, amor y vínculos del alma
+Patrones afectivos profundos. Tipo de amor que el alma pide vs lo que la mente cree querer. Dinámicas de codependencia o independencia. Qué tipo de pareja eleva esta vibración. Cómo amar desde la plenitud, no desde la carencia. Aprendizajes kármicos en el amor.
+
+## 10. Familia, linaje y árbol genealógico energético
+Rol en el sistema familiar. Patrones heredados (lealtades invisibles, mandatos familiares). Cómo sanar el linaje desde la conciencia individual.
+
+## 11. Aprendizajes espirituales de esta encarnación
+Qué sabidurías está aquí a aprender. Áreas de crecimiento acelerado. Tipo de maestros o situaciones que la vida envía para esta alma. Cómo convertir crisis en iniciaciones.
+
+## 12. Año Personal ${p.personalYear}: análisis estratégico profundo
+Energía dominante este año. Decisiones clave. Lo que hay que cerrar antes de fin de año. Lo que hay que sembrar. Meses de mayor potencial. Riesgos y cómo neutralizarlos.
+
+## 13. Plan de evolución personal: los próximos 12 meses
+Hábitos concretos según el mapa (diarios, semanales, mensuales). Decisiones importantes que tomar este ciclo. Enfoque espiritual: práctica, estudio, transformación interior. Una acción prioritaria para comenzar esta semana.
+
+## 14. Meditación profunda guiada (12 minutos)
+Meditación completa paso a paso. Visualización específica con los números del consultante. Mantra o afirmación personalizada.
+
+## 15. Ritual numerológico + mensaje del alma
+Ritual personalizado con elementos simbólicos asociados al número de vida. Instrucciones claras paso a paso.
+Cierre: el mensaje más poderoso y amoroso que el alma del consultante necesita escuchar hoy.
+
+Extensión: ${minW}–${maxW} palabras. Estilo: sabio, transformacional, profundo, sin clichés.`,
   };
 }
 
