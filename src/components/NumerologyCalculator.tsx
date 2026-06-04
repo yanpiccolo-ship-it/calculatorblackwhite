@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Language, translations } from '@/lib/translations';
 import { appConfig } from '@/lib/appConfig';
 import { useAppContent, getContentValue, getNumberMeaning } from '@/hooks/useAppContent';
@@ -29,8 +29,29 @@ import { DayNumber } from './DayNumber';
 import { BrandingCalculator } from './BrandingCalculator';
 import { CompatibilityCalculator } from './CompatibilityCalculator';
 import { Testimonials } from './Testimonials';
-import { Sparkles, Mail, Calendar, User } from 'lucide-react';
+import { HowItWorks } from './HowItWorks';
+import { NumerologyCuriosities } from './NumerologyCuriosities';
+import { SubscriptionsSection } from './SubscriptionsSection';
+import { Mail, Calendar, User, Moon, Sun, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+
+function useDarkMode() {
+  const [dark, setDark] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('theme') === 'dark' ||
+      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [dark]);
+  return [dark, setDark] as const;
+}
 
 interface NumerologyResults {
   destiny: NumerologyResult | null;
@@ -145,19 +166,21 @@ export const NumerologyCalculator = () => {
     }, 500);
   };
 
+  const [dark, setDark] = useDarkMode();
   const hasResults = results.destiny !== null;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - Compact */}
+      {/* Header */}
       <header className="border-b border-border/50 py-2 px-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 gold-accent" />
-            <span className="font-serif text-sm font-medium cursor-pointer" onClick={() => window.location.href = '/pricing'}>
-              {getContentValue(dynamicContent, 'app_name', appConfig.branding.appName)}
-            </span>
-          </div>
+          <button
+            onClick={() => setDark(!dark)}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors hover:bg-foreground/5"
+            aria-label="Toggle dark mode"
+          >
+            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           <LanguageSelector language={language} onLanguageChange={setLanguage} />
         </div>
       </header>
@@ -180,6 +203,7 @@ export const NumerologyCalculator = () => {
       {/* Calculator Form - Compact */}
       <section className="px-4 pb-4">
         <div className="max-w-2xl mx-auto">
+          <HowItWorks language={language} />
           <div className="card-elegant space-y-4 p-4 md:p-5">
             {/* Name Input */}
             <div className="space-y-1">
@@ -357,18 +381,26 @@ export const NumerologyCalculator = () => {
             {/* Brand Numerology */}
             <BrandingCalculator language={language} />
 
+            {/* Numerology Curiosities */}
+            <NumerologyCuriosities language={language} />
+
+            {/* Subscriptions */}
+            <SubscriptionsSection language={language} />
+
             {/* Testimonials */}
             <Testimonials language={language} />
           </div>
         </section>
       )}
 
-      {/* Compatibility, Branding, Testimonials — always visible */}
+      {/* Sections always visible */}
       {!hasResults && (
         <section className="px-4 pb-4">
           <div className="max-w-2xl mx-auto">
             <CompatibilityCalculator language={language} />
             <BrandingCalculator language={language} />
+            <NumerologyCuriosities language={language} />
+            <SubscriptionsSection language={language} />
             <Testimonials language={language} />
           </div>
         </section>

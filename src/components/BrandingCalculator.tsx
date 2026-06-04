@@ -164,29 +164,30 @@ export const BrandingCalculator = ({ language }: BrandingCalculatorProps) => {
           </div>
 
           {/* ── Full report upsell ── */}
-          <div className="rounded-xl border border-foreground/20 p-5 bg-foreground/[0.03] space-y-3">
+          <div className="rounded-xl border border-[#5a1010]/60 p-5 space-y-3" style={{ background: 'linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)' }}>
             <div className="flex items-start gap-3">
-              <FileText className="w-5 h-5 text-foreground/50 mt-0.5 flex-shrink-0" />
+              <FileText className="w-5 h-5 text-red-300/70 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-serif text-base font-medium text-foreground">{copy.reportCta} — {copy.reportPrice}</p>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{copy.reportDesc}</p>
+                <p className="font-serif text-base font-medium text-white/90">{copy.reportCta} — <span className="text-red-300">{copy.reportPrice}</span></p>
+                <p className="text-xs text-white/50 mt-0.5 leading-relaxed">{copy.reportDesc}</p>
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-medium">{copy.emailLabel}</Label>
+              <Label className="text-xs font-medium text-white/70">{copy.emailLabel}</Label>
               <div className="flex gap-2">
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={copy.emailPlaceholder}
-                  className="input-elegant h-9 text-sm flex-1"
+                  className="h-9 text-sm flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-red-400/60 rounded-lg"
                   onKeyDown={(e) => e.key === 'Enter' && buyReport()}
                 />
                 <button
                   onClick={buyReport}
                   disabled={!email.trim() || buying}
-                  className="px-4 py-2 bg-foreground text-background text-xs font-semibold rounded-lg disabled:opacity-40 hover:bg-foreground/90 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                  className="px-4 py-2 text-white text-xs font-semibold rounded-lg disabled:opacity-40 transition-all flex items-center gap-1.5 whitespace-nowrap hover:brightness-110"
+                  style={{ background: 'linear-gradient(135deg, #8b1a1a 0%, #6b0f0f 100%)', boxShadow: '0 2px 12px rgba(139,26,26,0.5)' }}
                 >
                   {buying
                     ? <><Loader2 className="w-3 h-3 animate-spin" />{copy.getting}</>
