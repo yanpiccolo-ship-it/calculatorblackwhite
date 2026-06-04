@@ -86,6 +86,13 @@ const PRODUCT_CATALOG: Record<
     amount: 5999,
     currency: 'eur',
   },
+  brand_report: {
+    name: 'Brand Numerology Report',
+    description:
+      'Complete numerological analysis of your brand or company: archetype, positioning, visual identity, brand voice, growth cycles and 12-month action plan.',
+    amount: 3999,
+    currency: 'eur',
+  },
 };
 
 function sanitizeRedirect(rawUrl: string | undefined, origin: string, fallbackPath: string) {

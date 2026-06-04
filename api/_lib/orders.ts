@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from './supabaseAdmin';
-import { buildProfile, type NumerologyProfile } from './numerologyServer';
+import { buildProfile, buildBrandProfile, type NumerologyProfile } from './numerologyServer';
 import { generateReport } from './openai';
 import { buildReportPdf } from './pdf';
 import { sendEmail } from './email';
@@ -139,6 +139,10 @@ export async function processOrder(orderId: string): Promise<ProcessResult> {
     let profile: NumerologyProfile;
     if (order.numerology_data && order.numerology_data.lifePath) {
       profile = order.numerology_data as NumerologyProfile;
+    } else if (order.product_key === 'brand_report' && order.customer_name) {
+      // Brand reports use the brand name only — no birth date required
+      profile = buildBrandProfile(order.customer_name);
+      await updateOrder(orderId, { numerology_data: profile as any });
     } else if (order.customer_name && order.birth_date) {
       profile = buildProfile(order.customer_name, order.birth_date);
       await updateOrder(orderId, { numerology_data: profile as any });

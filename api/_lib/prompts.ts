@@ -3,7 +3,7 @@
 
 import type { NumerologyProfile } from './numerologyServer';
 
-export type ProductKey = 'premium_pdf' | 'complete_report' | 'master_premium';
+export type ProductKey = 'premium_pdf' | 'complete_report' | 'master_premium' | 'brand_report';
 
 const LANG_NAME: Record<string, string> = {
   en: 'English', es: 'Spanish', fr: 'French', it: 'Italian',
@@ -30,12 +30,14 @@ const PRODUCT_TITLES: Record<ProductKey, string> = {
   premium_pdf: 'Initial Insight Report',
   complete_report: 'Complete Report — Fundamental Guidance',
   master_premium: 'Master Premium Report — Absolute Revelation',
+  brand_report: 'Brand Numerology Report — Complete Identity',
 };
 
 const PRODUCT_WORD_RANGES: Record<ProductKey, [number, number]> = {
   premium_pdf:     [1500, 2200],
   complete_report: [3000, 4500],
   master_premium:  [5500, 8000],
+  brand_report:    [2500, 3500],
 };
 
 // Jung archetypes mapped to numerology (for prompt context)
@@ -74,6 +76,11 @@ Números kármicos: ${p.karmic.length ? p.karmic.join(', ') : 'ninguno'}`;
 }
 
 export function buildPrompt({ product, profile, language = 'en' }: BuildArgs): BuiltPrompt {
+  // Brand reports use a dedicated prompt builder
+  if (product === 'brand_report') {
+    return buildBrandPrompt({ profile, language });
+  }
+
   const langName = LANG_NAME[language] ?? 'English';
   const [minW, maxW] = PRODUCT_WORD_RANGES[product];
   const data = profileBlock(profile);
@@ -258,6 +265,75 @@ Cierre: el mensaje más poderoso y amoroso que el alma del consultante necesita 
 
 Extensión: ${minW}–${maxW} palabras. Estilo: sabio, transformacional, profundo, sin clichés.`,
   };
+}
+
+// ── BRAND REPORT ──────────────────────────────────────────────────────────
+function buildBrandPrompt({ profile, language = 'en' }: { profile: NumerologyProfile; language?: string }): BuiltPrompt {
+  const langName = LANG_NAME[language] ?? 'English';
+  const [minW, maxW] = PRODUCT_WORD_RANGES['brand_report'];
+  const archetype = JUNG_ARCHETYPES[profile.lifePath] ?? '';
+
+  return {
+    title: PRODUCT_TITLES['brand_report'],
+    model: 'gemini-1.5-flash',
+    temperature: 0.87,
+    maxTokens: 6000,
+    wordRange: [minW, maxW],
+    system: `Eres un experto en branding estratégico, numerología aplicada al mundo empresarial y arquetipos de Jung.
+Generas el "Brand Numerology Report": una análisis completo de la identidad numerológica de una marca o empresa.
+El informe debe sentirse como un brief de estrategia de marca de alto nivel, combinando numerología sagrada con branding moderno.
+Estilo: profesional, estratégico, inspirador. Usa Markdown con secciones ##. Sin clichés.
+IMPORTANTE: escribe TODO el informe en ${langName}.`,
+    user: `Genera el Brand Numerology Report completo para esta marca:
+
+Nombre de la marca: ${profile.fullName}
+Número de marca (Expresión / Destino): ${profile.destiny}
+Número del alma de la marca (vocales): ${profile.soul}
+Número de personalidad (consonantes): ${profile.personality}
+Año de energía actual: ${profile.personalYear}
+Arquetipo de Jung: ${archetype}
+
+ESTRUCTURA OBLIGATORIA (11 secciones):
+
+## 1. ADN Numerológico de la Marca
+Introducción poderosa. El mapa energético completo de "${profile.fullName}": los tres números principales y cómo trabajan juntos para crear una identidad de marca única.
+
+## 2. Número de Marca ${profile.destiny}: Propósito Central
+Qué propósito fundamental expresa este número. Qué impacto tiene en el mercado. Cómo se manifiesta en la identidad de la marca. Fortalezas inherentes a este número en el mundo empresarial.
+
+## 3. Arquetipo de Marca: ${archetype}
+Análisis profundo del arquetipo en el contexto del branding. Cómo se expresa en la luz (cuando la marca está alineada) y en la sombra (cuando no lo está). Marcas globales con el mismo arquetipo y qué podemos aprender de ellas. Cómo activar conscientemente este arquetipo.
+
+## 4. Alma de Marca (${profile.soul}): Lo que la marca realmente desea
+La motivación profunda de esta marca. Qué quiere construir realmente. El legado que intuitivamente busca dejar. Qué valores deben estar en el corazón de todas sus decisiones.
+
+## 5. Personalidad de Marca (${profile.personality}): Cómo se percibe
+Cómo el mercado percibe esta marca en el primer contacto. Qué energía proyecta antes de que el cliente conozca el producto. Qué ajustes de comunicación alinearían la percepción con la esencia real.
+
+## 6. Posicionamiento de Mercado
+Qué nicho energético ocupa naturalmente este número. Con qué tipo de cliente resuena más. Qué posicionamiento diferencial emerge de la combinación de los tres números. Qué marcas competidoras tienen energías numéricamente similares o contrarias.
+
+## 7. Identidad Visual y Paleta de Energía
+Colores que resuenan con los números de esta marca y por qué energéticamente. Tipografías recomendadas (serif, sans-serif, script) y su vibración. Formas, geometrías y simbolismos que amplifican la energía. Qué elementos visuales evitar y por qué.
+
+## 8. Voz de Marca y Estrategia de Comunicación
+Tono de voz ideal para este número (formal/informal, directo/evocador, técnico/emocional). Palabras y frases que resuenan con el arquetipo. Temas de contenido que amplifican la energía de la marca. Canales de comunicación más afines a este número. Qué tipo de storytelling conecta con el alma de esta marca.
+
+## 9. Ciclos de Crecimiento para ${new Date().getFullYear()}
+Año de energía actual ${profile.personalYear} para esta marca: qué oportunidades específicas está señalando. Qué decisiones estratégicas favorecer. Qué proyectos o lanzamientos tienen mayor potencial este ciclo. Qué cerrar o transformar antes de fin de año.
+
+## 10. Numerología del Equipo y Contrataciones
+Qué números de vida en el equipo complementan la energía de la marca. Qué roles necesitan personas con qué números para equilibrar la organización. Cómo reconocer a las personas correctas en el proceso de selección.
+
+## 11. Plan de Acción: Próximos 90 días
+12 acciones concretas y aplicables organizadas por semana. Cada acción debe conectar directamente con la energía numerológica identificada. Incluye acciones de: identidad visual, comunicación, posicionamiento, equipo y rituales de marca.
+
+Extensión: ${minW}–${maxW} palabras.`,
+  };
+}
+
+export function buildPromptForBrand(args: { profile: NumerologyProfile; language?: string }): BuiltPrompt {
+  return buildBrandPrompt(args);
 }
 
 export function getProductTitle(product: ProductKey): string {
