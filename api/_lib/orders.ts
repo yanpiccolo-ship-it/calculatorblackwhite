@@ -2,7 +2,7 @@ import { getSupabaseAdmin } from './supabaseAdmin';
 import { buildProfile, type NumerologyProfile } from './numerologyServer';
 import { generateReport } from './openai';
 import { buildReportPdf } from './pdf';
-import { sendReportEmail } from './resend';
+import { sendEmail } from './email';
 import { getProductTitle, type ProductKey } from './prompts';
 
 export interface OrderRow {
@@ -175,13 +175,22 @@ export async function processOrder(orderId: string): Promise<ProcessResult> {
     });
 
     // 6. Email
-    const sent = await sendReportEmail({
+    const greeting = order.customer_name ? `Hi ${order.customer_name},` : 'Hello,';
+    const emailHtml = `<!doctype html>
+<html><body style="font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; color: #222; max-width: 560px; margin: 0 auto; padding: 24px;">
+  <h2 style="font-family: Georgia, serif; color: #111; margin-top: 0;">${ai.title}</h2>
+  <p>${greeting}</p>
+  <p>Thank you for your purchase. Your personalized numerology report is attached as a PDF.</p>
+  <p>Take a quiet moment to read it — these insights are most powerful when you give them space to land.</p>
+  <p style="margin-top: 28px; color: #777; font-size: 13px;">With light,<br/>The Numerology Reading team</p>
+  <hr style="border: none; border-top: 1px solid #eee; margin: 28px 0;"/>
+  <p style="color: #999; font-size: 12px;">If you have any questions, just reply to this email.</p>
+</body></html>`;
+    const sent = await sendEmail({
       to: order.customer_email,
-      customerName: order.customer_name || undefined,
       subject: `${ai.title} — your personalized report`,
-      reportTitle: ai.title,
-      pdfBuffer: pdf,
-      pdfFilename: `${ai.title.replace(/[^a-z0-9]+/gi, '_')}.pdf`,
+      html: emailHtml,
+      attachments: [{ filename: `${ai.title.replace(/[^a-z0-9]+/gi, '_')}.pdf`, content: pdf }],
     });
 
     await updateOrder(orderId, {

@@ -25,6 +25,10 @@ import {
 import { LanguageSelector } from './LanguageSelector';
 import { ResultCard } from './ResultCard';
 import { ProductsShowcase } from './ProductsShowcase';
+import { DayNumber } from './DayNumber';
+import { BrandingCalculator } from './BrandingCalculator';
+import { CompatibilityCalculator } from './CompatibilityCalculator';
+import { Testimonials } from './Testimonials';
 import { Sparkles, Mail, Calendar, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -160,13 +164,16 @@ export const NumerologyCalculator = () => {
 
       {/* Hero Section - Compact */}
       <section className="py-4 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="font-serif text-2xl md:text-3xl font-light tracking-tight text-foreground mb-1">
-            {getText('title')}
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-            {getText('subtitle')}
-          </p>
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-3">
+            <h1 className="font-serif text-2xl md:text-3xl font-light tracking-tight text-foreground mb-1">
+              {getText('title')}
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+              {getText('subtitle')}
+            </p>
+          </div>
+          <DayNumber language={language} />
         </div>
       </section>
 
@@ -343,9 +350,30 @@ export const NumerologyCalculator = () => {
                 email={email}
               />
             )}
+
+            {/* Compatibility Calculator */}
+            <CompatibilityCalculator language={language} />
+
+            {/* Brand Numerology */}
+            <BrandingCalculator language={language} />
+
+            {/* Testimonials */}
+            <Testimonials language={language} />
           </div>
         </section>
       )}
+
+      {/* Compatibility, Branding, Testimonials — always visible */}
+      {!hasResults && (
+        <section className="px-4 pb-4">
+          <div className="max-w-2xl mx-auto">
+            <CompatibilityCalculator language={language} />
+            <BrandingCalculator language={language} />
+            <Testimonials language={language} />
+          </div>
+        </section>
+      )}
+
       {/* Footer Branding */}
       <footer className="mt-8 pt-6 border-t border-border/30 text-center pb-4">
         <p className="text-[10px] text-muted-foreground font-serif italic tracking-wider">
