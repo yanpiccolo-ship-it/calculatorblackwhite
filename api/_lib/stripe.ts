@@ -63,7 +63,7 @@ export type CheckoutSessionRequest = {
 
 const PRODUCT_CATALOG: Record<
   string,
-  { name: string; description: string; amount: number; currency: string }
+  { name: string; description: string; amount: number; currency: string; recurring?: boolean }
 > = {
   premium_pdf: {
     name: 'Premium Numerology PDF Report',
@@ -92,6 +92,27 @@ const PRODUCT_CATALOG: Record<
       'Complete numerological analysis of your brand or company: archetype, positioning, visual identity, brand voice, growth cycles and 12-month action plan.',
     amount: 3999,
     currency: 'eur',
+  },
+  luna: {
+    name: 'Luna — Monthly Plan',
+    description: '1 personal numerology report/month, daily universal number, unlimited compatibility calculator.',
+    amount: 999,
+    currency: 'eur',
+    recurring: true,
+  },
+  estrella: {
+    name: 'Estrella — Monthly Plan',
+    description: '2 full reports/month, PDF downloads, yearly forecast, past reports archive.',
+    amount: 1999,
+    currency: 'eur',
+    recurring: true,
+  },
+  maestra: {
+    name: 'Maestra — Monthly Plan',
+    description: 'Unlimited personal reports + 1 Brand Report/month, Master Premium always included.',
+    amount: 3999,
+    currency: 'eur',
+    recurring: true,
   },
 };
 
@@ -133,20 +154,32 @@ export async function createCheckoutSession(
   );
   const cancelUrl = sanitizeRedirect(body.cancelUrl, origin, '/checkout/cancel');
 
+  const isSubscription = preset?.recurring === true;
+
   const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
+    mode: isSubscription ? 'subscription' : 'payment',
     payment_method_types: ['card'],
     line_items: [
       {
-        quantity,
-        price_data: {
-          currency,
-          unit_amount: amount,
-          product_data: {
-            name,
-            ...(description ? { description } : {}),
-          },
-        },
+        quantity: isSubscription ? undefined : quantity,
+        price_data: isSubscription
+          ? {
+              currency,
+              unit_amount: amount,
+              product_data: {
+                name,
+                ...(description ? { description } : {}),
+              },
+              recurring: { interval: 'month' },
+            }
+          : {
+              currency,
+              unit_amount: amount,
+              product_data: {
+                name,
+                ...(description ? { description } : {}),
+              },
+            },
       },
     ],
     customer_email: body.customerEmail,
