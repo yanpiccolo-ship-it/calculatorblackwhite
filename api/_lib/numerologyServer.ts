@@ -106,6 +106,28 @@ export interface NumerologyProfile {
   isMaster: boolean;
 }
 
+export function buildBrandProfile(brandName: string): NumerologyProfile {
+  const destiny = destinyNumber(brandName);
+  const currentYear = new Date().getFullYear();
+  const yearEnergy = reduce(
+    String(currentYear)
+      .split('')
+      .reduce((s, d) => s + Number(d), 0),
+  );
+  return {
+    fullName: brandName,
+    birthDate: String(currentYear),
+    lifePath: destiny,
+    destiny,
+    soul: soulNumber(brandName),
+    personality: personalityNumber(brandName),
+    expression: expressionNumber(brandName),
+    personalYear: yearEnergy,
+    karmic: [],
+    isMaster: MASTER_NUMBERS.has(destiny),
+  };
+}
+
 export function buildProfile(fullName: string, birthDateIso: string): NumerologyProfile {
   const bd = new Date(`${birthDateIso}T00:00:00Z`);
   if (Number.isNaN(bd.getTime())) {
