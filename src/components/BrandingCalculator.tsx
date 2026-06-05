@@ -119,7 +119,7 @@ export const BrandingCalculator = ({ language }: BrandingCalculatorProps) => {
             <button
               onClick={analyze}
               disabled={!brandName.trim()}
-              className="px-4 py-2 bg-foreground text-background text-xs font-medium rounded-lg disabled:opacity-40 hover:bg-foreground/90 transition-colors whitespace-nowrap"
+              className="px-4 py-2 bg-black text-white dark:bg-white dark:text-black text-xs font-semibold rounded-lg disabled:opacity-40 hover:opacity-85 transition-opacity whitespace-nowrap"
             >
               {copy.btn}
             </button>

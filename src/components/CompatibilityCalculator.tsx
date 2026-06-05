@@ -168,7 +168,7 @@ export const CompatibilityCalculator = ({ language }: { language: Language }) =>
         <button
           onClick={analyze}
           disabled={!p1.day || !p1.month || !p1.year || !p2.day || !p2.month || !p2.year}
-          className="w-full py-2.5 bg-foreground text-background text-sm font-medium rounded-lg disabled:opacity-40 hover:bg-foreground/90 transition-colors"
+          className="w-full py-2.5 bg-black text-white dark:bg-white dark:text-black text-sm font-semibold rounded-lg disabled:opacity-40 hover:opacity-85 transition-opacity"
         >
           {copy.analyze}
         </button>
