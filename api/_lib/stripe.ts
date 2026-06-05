@@ -156,32 +156,28 @@ export async function createCheckoutSession(
 
   const isSubscription = preset?.recurring === true;
 
-  const session = await stripe.checkout.sessions.create({
+  const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = isSubscription
+    ? {
+        quantity: 1,
+        price_data: {
+          currency,
+          unit_amount: amount,
+          product_data: { name, ...(description ? { description } : {}) },
+          recurring: { interval: 'month' },
+        },
+      }
+    : {
+        quantity,
+        price_data: {
+          currency,
+          unit_amount: amount,
+          product_data: { name, ...(description ? { description } : {}) },
+        },
+      };
+
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     mode: isSubscription ? 'subscription' : 'payment',
-    payment_method_types: ['card'],
-    line_items: [
-      {
-        quantity: isSubscription ? undefined : quantity,
-        price_data: isSubscription
-          ? {
-              currency,
-              unit_amount: amount,
-              product_data: {
-                name,
-                ...(description ? { description } : {}),
-              },
-              recurring: { interval: 'month' },
-            }
-          : {
-              currency,
-              unit_amount: amount,
-              product_data: {
-                name,
-                ...(description ? { description } : {}),
-              },
-            },
-      },
-    ],
+    line_items: [lineItem],
     customer_email: body.customerEmail,
     success_url: successUrl,
     cancel_url: cancelUrl,
@@ -189,7 +185,9 @@ export async function createCheckoutSession(
       ...(body.productKey ? { productKey: body.productKey } : {}),
       ...(body.metadata ?? {}),
     },
-  });
+  };
+
+  const session = await stripe.checkout.sessions.create(sessionParams);
 
   return { id: session.id, url: session.url };
 }

@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import createCheckoutHandler from '../api/create-checkout-session';
 import processOrderHandler from '../api/process-order';
 import stripeWebhookHandler from '../api/stripe-webhook';
+import newsletterHandler from '../api/newsletter-subscribe';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, '..', 'dist');
@@ -57,6 +58,10 @@ app.post('/api/create-checkout-session', (req, res, next) => {
 
 app.post('/api/process-order', (req, res, next) => {
   Promise.resolve(processOrderHandler(req as any, res as any)).catch(next);
+});
+
+app.post('/api/newsletter-subscribe', (req, res, next) => {
+  Promise.resolve(newsletterHandler(req as any, res as any)).catch(next);
 });
 
 // Static SPA assets
