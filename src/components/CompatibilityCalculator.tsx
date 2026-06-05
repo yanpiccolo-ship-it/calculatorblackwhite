@@ -2,13 +2,10 @@ import { useState } from 'react';
 import { Language } from '@/lib/translations';
 import { Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 
-// Compatibility scores [1-9] and notes for each pair (both directions equal)
-// Key: `${Math.min(a,b)}-${Math.max(a,b)}`
 type CompatNote = { score: number; en: string; es: string; it: string; de: string; zh: string; ja: string; fr: string };
 
 const COMPAT: Record<string, CompatNote> = {
@@ -60,26 +57,19 @@ const COMPAT: Record<string, CompatNote> = {
 };
 
 function getCompat(a: number, b: number): CompatNote | null {
-  const key = `${Math.min(a,b)}-${Math.max(a,b)}`;
-  return COMPAT[key] ?? null;
+  return COMPAT[`${Math.min(a,b)}-${Math.max(a,b)}`] ?? null;
 }
 
 function getLifePath(day: number, month: number, year: number): number {
   const MASTERS = [11, 22, 33, 44];
   const reduce = (n: number): number => {
-    while (n > 9 && !MASTERS.includes(n)) {
-      n = String(n).split('').reduce((s, d) => s + +d, 0);
-    }
+    while (n > 9 && !MASTERS.includes(n)) n = String(n).split('').reduce((s,d) => s + +d, 0);
     return n;
   };
   return reduce(reduce(day) + reduce(month) + reduce(year));
 }
 
-const COPY: Record<Language, {
-  title: string; sub: string; person1: string; person2: string;
-  name: string; born: string; analyze: string; score: string; result: string;
-  day: string; month: string; year: string;
-}> = {
+const COPY: Record<Language, { title:string; sub:string; person1:string; person2:string; name:string; born:string; analyze:string; score:string; result:string; day:string; month:string; year:string }> = {
   en: { title:'Numerological Compatibility', sub:'Discover the energy between two people', person1:'Person 1', person2:'Person 2', name:'Name', born:'Date of birth', analyze:'Check Compatibility', score:'Compatibility', result:'Reading', day:'Day', month:'Month', year:'Year' },
   es: { title:'Compatibilidad Numerológica', sub:'Descubre la energía entre dos personas', person1:'Persona 1', person2:'Persona 2', name:'Nombre', born:'Fecha de nacimiento', analyze:'Ver Compatibilidad', score:'Compatibilidad', result:'Lectura', day:'Día', month:'Mes', year:'Año' },
   it: { title:'Compatibilità Numerologica', sub:'Scopri l\'energia tra due persone', person1:'Persona 1', person2:'Persona 2', name:'Nome', born:'Data di nascita', analyze:'Verifica Compatibilità', score:'Compatibilità', result:'Lettura', day:'Giorno', month:'Mese', year:'Anno' },
@@ -99,16 +89,48 @@ const SCORE_LABELS: Record<Language, (s: number) => string> = {
   fr: (s) => s >= 9 ? 'Exceptionnelle ✦' : s >= 8 ? 'Très Haute' : s >= 7 ? 'Haute' : s >= 6 ? 'Modérée' : 'Défiant',
 };
 
-const days = Array.from({ length: 31 }, (_, i) => i + 1);
-const months = Array.from({ length: 12 }, (_, i) => i + 1);
-const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+const ALL_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+const ALL_MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+const ALL_YEARS = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
 
 interface PersonForm { name: string; day: string; month: string; year: string }
 const empty = (): PersonForm => ({ name: '', day: '', month: '', year: '' });
 
-interface CompatibilityCalculatorProps { language: Language }
+// ── PersonFields is defined OUTSIDE the parent component to avoid remount on each render ──
+interface PersonFieldsProps {
+  label: string;
+  value: PersonForm;
+  onChange: (v: PersonForm) => void;
+  copy: { name: string; day: string; month: string; year: string };
+}
 
-export const CompatibilityCalculator = ({ language }: CompatibilityCalculatorProps) => {
+const PersonFields = ({ label, value, onChange, copy }: PersonFieldsProps) => (
+  <div className="space-y-2">
+    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{label}</p>
+    <Input
+      placeholder={copy.name}
+      value={value.name}
+      onChange={(e) => onChange({ ...value, name: e.target.value })}
+      className="input-elegant h-9 text-sm"
+    />
+    <div className="grid grid-cols-3 gap-1.5">
+      <Select value={value.day} onValueChange={(v) => onChange({ ...value, day: v })}>
+        <SelectTrigger className="input-elegant h-9 text-xs"><SelectValue placeholder={copy.day} /></SelectTrigger>
+        <SelectContent>{ALL_DAYS.map((v) => <SelectItem key={v} value={String(v)}>{v}</SelectItem>)}</SelectContent>
+      </Select>
+      <Select value={value.month} onValueChange={(v) => onChange({ ...value, month: v })}>
+        <SelectTrigger className="input-elegant h-9 text-xs"><SelectValue placeholder={copy.month} /></SelectTrigger>
+        <SelectContent>{ALL_MONTHS.map((v) => <SelectItem key={v} value={String(v)}>{v}</SelectItem>)}</SelectContent>
+      </Select>
+      <Select value={value.year} onValueChange={(v) => onChange({ ...value, year: v })}>
+        <SelectTrigger className="input-elegant h-9 text-xs"><SelectValue placeholder={copy.year} /></SelectTrigger>
+        <SelectContent>{ALL_YEARS.map((v) => <SelectItem key={v} value={String(v)}>{v}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+  </div>
+);
+
+export const CompatibilityCalculator = ({ language }: { language: Language }) => {
   const [p1, setP1] = useState<PersonForm>(empty());
   const [p2, setP2] = useState<PersonForm>(empty());
   const [result, setResult] = useState<null | { lp1: number; lp2: number; compat: CompatNote }>(null);
@@ -125,34 +147,9 @@ export const CompatibilityCalculator = ({ language }: CompatibilityCalculatorPro
   const scoreLabel = result ? (SCORE_LABELS[language] ?? SCORE_LABELS.en)(result.compat.score) : '';
   const note = result ? ((result.compat as any)[language] ?? result.compat.en) : '';
   const scoreColor = result
-    ? result.compat.score >= 9 ? 'text-emerald-700' : result.compat.score >= 7 ? 'text-amber-700' : 'text-orange-700'
+    ? result.compat.score >= 9 ? 'text-emerald-700 dark:text-emerald-400'
+      : result.compat.score >= 7 ? 'text-amber-700 dark:text-amber-400' : 'text-orange-700 dark:text-orange-400'
     : '';
-
-  const PersonFields = ({ label, value, onChange }: { label: string; value: PersonForm; onChange: (v: PersonForm) => void }) => (
-    <div className="space-y-2">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{label}</p>
-      <Input
-        placeholder={copy.name}
-        value={value.name}
-        onChange={(e) => onChange({ ...value, name: e.target.value })}
-        className="input-elegant h-9 text-sm"
-      />
-      <div className="grid grid-cols-3 gap-1.5">
-        {(['day', 'month', 'year'] as const).map((field) => (
-          <Select key={field} value={value[field]} onValueChange={(v) => onChange({ ...value, [field]: v })}>
-            <SelectTrigger className="input-elegant h-9 text-xs">
-              <SelectValue placeholder={copy[field]} />
-            </SelectTrigger>
-            <SelectContent>
-              {(field === 'day' ? days : field === 'month' ? months : years).map((v) => (
-                <SelectItem key={v} value={String(v)}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ))}
-      </div>
-    </div>
-  );
 
   return (
     <div className="mt-8 pt-8 border-t border-border/40">
@@ -165,8 +162,8 @@ export const CompatibilityCalculator = ({ language }: CompatibilityCalculatorPro
       </div>
 
       <div className="max-w-md mx-auto space-y-4">
-        <PersonFields label={copy.person1} value={p1} onChange={setP1} />
-        <PersonFields label={copy.person2} value={p2} onChange={setP2} />
+        <PersonFields label={copy.person1} value={p1} onChange={setP1} copy={copy} />
+        <PersonFields label={copy.person2} value={p2} onChange={setP2} copy={copy} />
 
         <button
           onClick={analyze}
@@ -191,7 +188,6 @@ export const CompatibilityCalculator = ({ language }: CompatibilityCalculatorPro
                 <p className="font-serif text-3xl font-bold text-foreground">{result.lp2}</p>
               </div>
             </div>
-
             <div className="text-center pt-2 border-t border-border/40">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{copy.score}</p>
               <div className="flex items-center justify-center gap-2 mt-0.5">
@@ -199,7 +195,6 @@ export const CompatibilityCalculator = ({ language }: CompatibilityCalculatorPro
                 <span className={`text-xs font-medium ${scoreColor}`}>{scoreLabel}</span>
               </div>
             </div>
-
             <div className="pt-2 border-t border-border/40">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{copy.result}</p>
               <p className="text-xs text-foreground/80 leading-relaxed">{note}</p>

@@ -108,7 +108,32 @@ export function stripeApiPlugin(): Plugin {
         }
       });
 
-      // 3) Manual order re-processing (admin "Generate" / "Resend" buttons)
+      // 3) Newsletter subscription
+      server.middlewares.use('/api/newsletter-subscribe', async (req, res) => {
+        setCors(res);
+        if (req.method === 'OPTIONS') return void (res.statusCode = 204) || res.end();
+        if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+        try {
+          const body = await readJson<{ email?: string }>(req);
+          const email = body.email?.trim().toLowerCase();
+          if (!email || !email.includes('@')) return sendJson(res, 400, { error: 'Invalid email' });
+          // Best-effort Supabase upsert — silently skips if table doesn't exist
+          try {
+            const { createClient } = await import('@supabase/supabase-js');
+            const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? '';
+            const key = process.env.SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+            if (url && key) {
+              const sb = createClient(url, key);
+              await sb.from('newsletter_subscribers').upsert({ email, subscribed_at: new Date().toISOString() }, { onConflict: 'email', ignoreDuplicates: true });
+            }
+          } catch { /* table may not exist yet */ }
+          sendJson(res, 200, { ok: true });
+        } catch (err) {
+          sendJson(res, 500, { error: (err as Error).message });
+        }
+      });
+
+      // 4) Manual order re-processing (admin "Generate" / "Resend" buttons)
       server.middlewares.use('/api/process-order', async (req, res) => {
         setCors(res);
         if (req.method === 'OPTIONS') return void (res.statusCode = 204) || res.end();

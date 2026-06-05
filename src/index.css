@@ -169,9 +169,36 @@
     background-color: #F5F5F5 !important;
     @apply border-border/50 focus:border-accent focus:ring-accent/20;
   }
+
+  .dark .input-elegant {
+    background-color: hsl(0 0% 16%) !important;
+    color: hsl(0 0% 90%) !important;
+    border-color: hsl(0 0% 28%) !important;
+  }
   
   .premium-cta-bg {
     background-color: #F5F5F5;
+  }
+
+  /* ── Dark-mode muted buttons need white text ── */
+  .dark .bg-muted {
+    background-color: hsl(0 0% 22%) !important;
+  }
+
+  /* ── Section separator gradients ── */
+  .section-alt {
+    background: hsl(0 0% 98%);
+  }
+  .dark .section-alt {
+    background: hsl(0 0% 8%);
+  }
+
+  /* ── Subtle section divider gradient ── */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--border)), transparent);
+    margin: 0;
+    border: none;
   }
 
   .btn-calculate {
