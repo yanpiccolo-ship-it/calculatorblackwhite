@@ -72,7 +72,6 @@ export const SubscriptionsSection = ({ language }: { language: Language }) => {
   const [nlEmail, setNlEmail] = useState('');
   const [nlDone, setNlDone] = useState(false);
   const [nlLoading, setNlLoading] = useState(false);
-  const [planEmail, setPlanEmail] = useState('');
   const [buying, setBuying] = useState<Plan['id'] | null>(null);
   const copy = COPY[language] ?? COPY.en;
 
@@ -91,7 +90,7 @@ export const SubscriptionsSection = ({ language }: { language: Language }) => {
   };
 
   const subscribe = async (plan: Plan) => {
-    const email = planEmail.trim() || nlEmail.trim();
+    const email = nlEmail.trim();
     if (!email) {
       toast({ title: 'Email required', description: 'Please enter your email address first.', variant: 'destructive' });
       return;
@@ -165,20 +164,6 @@ export const SubscriptionsSection = ({ language }: { language: Language }) => {
       <div className="text-center mb-5">
         <h3 className="font-serif text-xl font-medium text-foreground">{copy.plansTitle}</h3>
         <p className="text-xs text-muted-foreground mt-1">{copy.plansSub}</p>
-      </div>
-
-      {/* Shared email for plans */}
-      <div className="max-w-xs mx-auto mb-5">
-        <div className="flex gap-2">
-          <Input
-            type="email"
-            value={planEmail || nlEmail}
-            onChange={(e) => setPlanEmail(e.target.value)}
-            placeholder={copy.emailPlaceholder}
-            className="input-elegant h-9 text-sm text-center flex-1"
-          />
-        </div>
-        <p className="text-[10px] text-muted-foreground text-center mt-1">Email for your subscription</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
